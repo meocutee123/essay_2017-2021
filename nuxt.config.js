@@ -1,7 +1,7 @@
 export default {
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    title: "blinkeu",
+    title: "NextTREND",
     htmlAttrs: {
       lang: "en"
     },
@@ -11,7 +11,7 @@ export default {
       { hid: "description", name: "description", content: "" }
     ],
     link: [
-      { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
+      { rel: "icon", type: "image/x-icon", href: "/logo.png" },
       {
         rel: "stylesheet",
         href:
@@ -24,7 +24,7 @@ export default {
   css: ["~/assets/external.scss"],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: [],
+  plugins: ['@/plugins/modals/v-modal.js', '@/plugins/vco.js'],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,

@@ -2,10 +2,19 @@
   <div class="app">
     <NavHead/>
    <div class="main">
-     <nuxt/>
+     <nuxt @closeModal="onClickOutside"/>
    </div>
   </div>
 </template>
+<script>
+export default {
+   methods: {
+    onClickOutside() {
+      $nuxt.$emit('closeModal')
+    }
+  }
+}
+</script>
 
 <style lang="scss" scoped>
 .main{
