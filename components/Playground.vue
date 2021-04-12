@@ -14,6 +14,8 @@
           placeholder="Type a message"
           @focus="onFocus = true"
           @blur="onfocus = false"
+          v-model="content"
+          @keyup.enter.exact="onClickSend()"
         ></textarea>
         <b-icon
           class="icon-smile"
@@ -22,6 +24,7 @@
         ></b-icon>
       </div>
       <b-icon
+        @click="onClickSend()"
         class="focus-icon mt-2 ml-3"
         :icon="onFocus ? 'cursor-fill' : 'heart-fill'"
         scale="1.4rem"
@@ -32,11 +35,20 @@
 
 <script>
 export default {
-    data(){
-        return{
-            onFocus: false
-        }
+  data() {
+    return {
+      onFocus: false,
+      content: ""
+    };
+  },
+  methods: {
+    onClickSend() {
+      this.$emit("onClickSend", {
+        content: this.content
+      });
+      this.content = ''
     }
+  }
 };
 </script>
 
@@ -50,12 +62,12 @@ export default {
     color: #000000;
     padding: 5px 15px 5px 10px;
     min-width: 150px;
-    transition: .2s;
-    .b-icon{
-      &:hover{
-      cursor: pointer;
-      color: #fec5bb;
-    }
+    transition: 0.2s;
+    .b-icon {
+      &:hover {
+        cursor: pointer;
+        color: #fec5bb;
+      }
     }
   }
   .message {

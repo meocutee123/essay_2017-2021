@@ -255,7 +255,7 @@
         </div>
       </div>
       <div :class="['blink d-flex flex-column', { blinkActive: isActive }]">
-        <ChatSection>
+        <ChatSection :messages="messages">
           <template v-slot:greetings>
             <div class="greetings text-center p-2">
               <b-avatar
@@ -267,7 +267,7 @@
             </div>
           </template>
         </ChatSection>
-        <Playground />
+        <Playground @onClickSend="sendMessage" />
       </div>
       <div :class="[{ active: isActive }, 'gallery px-2']" id="gallery">
         <div class="gallery-head d-flex align-items-center">
@@ -319,10 +319,20 @@
         </div>
       </div>
     </section>
+    <!-- <form @submit.prevent="pressed()">
+      <input type="text" v-model="email" />
+      <input type="text" v-model="password" />
+      <button type="submit">Click me</button>
+    </form> -->
   </page-container>
 </template>
 
 <script>
+import firebase from "firebase/app";
+import "firebase/auth";
+
+import { mapState } from "vuex";
+
 import new_conversation from "../page_modals/new_conversation.vue";
 import paticipants from "../page_modals/paticipants.vue";
 export default {
@@ -330,13 +340,41 @@ export default {
   data() {
     return {
       isActive: false,
-      onFocus: false
+      onFocus: false,
+      email: "",
+      password: ""
     };
   },
   methods: {
     onClickOutside() {
       $nuxt.$emit("closeModal");
+    },
+    pressed() {
+      console.log(456);
+      firebase
+        .auth()
+        .signInWithEmailAndPassword(this.email, this.password)
+        .then(data => {
+          console.log(data);
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    async sendMessage(content) {
+      await this.$axios
+        .post("messages.json", JSON.stringify(content))
+        .then(response => {
+          console.log(response.data);
+          this.$store.dispatch("updateMessage", content);
+        })
+        .catch(err => {
+          console.log(err);
+        });
     }
+  },
+  computed: {
+    ...mapState(["messages"])
   }
 };
 </script>

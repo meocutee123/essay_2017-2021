@@ -1,22 +1,17 @@
 <template>
   <div class="chat-section mt-auto px-3">
     <slot name="greetings"></slot>
-    <div class="conversations d-flex align-items-end flex-column p-2 ml-auto">
+    <div
+      v-for="(content, index) in messages"
+      :key="index"
+      class="conversations d-flex align-items-end flex-column p-2 ml-auto"
+    >
       <div class="content">
-        <div>Lorem ipsum dolor sit amet.</div>
-      </div>
-      <div class="content">
-        <div>Lorem, ipsum dolor.</div>
-      </div>
-      <div class="content">
-        <div>
-          Lorem ipsum dolor sit amet consectetur, adipisici elit. Perspiciatis,
-          suscipit!
-        </div>
+        <div>{{ content.content }}</div>
       </div>
       <b-avatar class="to" size="1rem"></b-avatar>
     </div>
-    <div class="conversations d-flex align-items-start flex-column p-2">
+    <!-- <div class="conversations d-flex align-items-start flex-column p-2">
       <div class="content">
         <div>Lorem ipsum dolor sit amet.</div>
       </div>
@@ -45,14 +40,19 @@
         <div>Lorem ipsum dolor sit amet.</div>
       </div>
       <b-avatar class="from" size="1rem"></b-avatar>
-    </div>
+    </div> -->
     <div class="bottom"></div>
   </div>
 </template>
 
 <script>
+import { mapState } from "vuex";
 export default {
-  mounted() {
+  data() {
+    return {};
+  },
+  async mounted() {
+    await this.$store.dispatch("getMessages");
     this.scrollToElement();
   },
   methods: {
@@ -64,6 +64,9 @@ export default {
         el.scrollIntoView({ behavior: "smooth" });
       }
     }
+  },
+  computed: {
+    ...mapState(["messages"])
   }
 };
 </script>

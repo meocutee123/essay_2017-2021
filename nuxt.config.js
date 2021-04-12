@@ -24,7 +24,7 @@ export default {
   css: ["~/assets/external.scss"],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: ['@/plugins/modals/v-modal.js', '@/plugins/vco.js'],
+  plugins: ['@/plugins/modals/v-modal.js', '@/plugins/vco.js', '@/plugins/firebase.js'],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -51,7 +51,9 @@ export default {
     icons: true
   },
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
-  axios: {},
+  axios: {
+    baseURL: 'https://getting-started-613bf-default-rtdb.firebaseio.com/'
+  },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {}
