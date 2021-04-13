@@ -85,6 +85,7 @@ export default {
         resize: none;
         padding-left: 0.5rem;
         color: #000000;
+        font-size: 1rem;
         &::-webkit-scrollbar {
           display: none;
         }
