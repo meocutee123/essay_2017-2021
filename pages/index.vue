@@ -345,6 +345,9 @@ export default {
       password: ""
     };
   },
+  mounted(){
+    this.$store.dispatch('getMessages')
+  },
   methods: {
     onClickOutside() {
       $nuxt.$emit("closeModal");
