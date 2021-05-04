@@ -3,22 +3,42 @@
     <div class="d-flex justify-content-between align-items-center">
       <img src="/Chat-Illustration.jpg" alt="chat" />
       <div class="login-form">
-        <h1>Sign in</h1>
-        <form action="">
+        <h1>{{ formText.header }}</h1>
+        <form @submit.prevent="onSubmit()">
           <div class="p-2">
-            <label for="userName">Username: </label>
-            <input type="text" id="userName" placeholder="Username" />
+            <label for="email">Email: </label>
+            <input
+              type="text"
+              id="email"
+              v-model="form.email"
+              placeholder="Email"
+            /><br />
           </div>
           <div class="p-2">
             <label for="password">Password: </label>
-            <input type="text" id="password" placeholder="Password" />
+            <input
+              type="text"
+              id="password"
+              v-model="form.password"
+              placeholder="Password"
+            /><br />
           </div>
-          <button>Log in</button>
+          <div class="p-2" v-if="isSignUp">
+            <label for="confirmPassword">Confirm password: </label>
+            <input
+              type="text"
+              id="confirmPassword"
+              v-model="form.confirmPassword"
+              placeholder="Password"
+            /><br />
+          </div>
+
+          <button type="submit">{{ formText.button }}</button>
         </form>
       </div>
     </div>
     <div class="w-100 d-flex justify-content-around">
-      <span>Create an account</span>
+      <span @click="onCreate()">Create an account</span>
       <span
         >Or login with
         <b-icon class="mx-3" icon="facebook" scale="2rem"></b-icon
@@ -30,8 +50,86 @@
 </template>
 
 <script>
+import firebase from "firebase/app";
+import "firebase/auth";
 export default {
-  layout: "empty"
+  layout: "empty",
+  data() {
+    return {
+      isSignUp: false,
+      formText: {
+        header: "Sign in",
+        button: "Sign in"
+      },
+      form: {
+        email: "",
+        password: "",
+        confirmPassword: ""
+      }
+    };
+  },
+  methods: {
+    onCreate() {
+      (this.formText.header = "Sign up"),
+        (this.formText.button = "Sign up"),
+        (this.isSignUp = true);
+    },
+
+    async onSubmit() {
+      this.isSignUp
+        ? this.doSignUp()
+        : await firebase
+            .auth()
+            .signInWithEmailAndPassword(this.form.email, this.form.password)
+            .then(response => {
+              localStorage.setItem("token", response.user.refreshToken )
+              this.isSignUp = false;
+              this.$router.push("/");
+            })
+            .catch(err => {
+              this.$bvToast.toast("Username or password is incorrect!", {
+                title: "Error!",
+                variant: "danger",
+                solid: true
+              });
+            });
+    },
+    async doSignUp() {
+      if (this.form.password == this.form.confirmPassword) {
+        await firebase
+          .auth()
+          .createUserWithEmailAndPassword(this.form.email, this.form.password)
+          .then(response => {
+            this.$bvToast.toast("Account created successfully!", {
+              title: "Success",
+              variant: "success",
+              solid: true
+            });
+            this.$axios.post('users.json', {
+              email: this.form.email,
+              password: this.form.password,
+              id: response.user.uid
+            })
+            this.isSignUp = false;
+            this.formText.header = "Sign in";
+            this.formText.button = "Sign in";
+          })
+          .catch(err => {
+            this.$bvToast.toast(err.message, {
+              title: "Error",
+              variant: "danger",
+              solid: true
+            });
+          });
+        return;
+      }
+      this.$bvToast.toast("Password and confirm password do not match", {
+        title: "Error",
+        variant: "danger",
+        solid: true
+      });
+    }
+  }
 };
 </script>
 
@@ -59,11 +157,11 @@ img {
     width: 400px;
     div > label {
       font-weight: bold;
+      width: 85px;
     }
     div > input {
       padding: 0.3em;
       margin-left: 1rem;
-      margin-bottom: 2rem;
       border: none;
       outline: none;
       border-bottom: 1px solid #e4e6eb;
@@ -101,5 +199,9 @@ img {
       cursor: pointer;
     }
   }
+}
+.inValidMessage {
+  color: red;
+  font-size: 0.8rem;
 }
 </style>

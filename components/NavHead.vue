@@ -111,6 +111,11 @@ export default {
     closeModal() {
       this.$modal.close({ name: "modal" });
     }
+  },
+  computed:{
+    userLoged(){
+      window.localStorage.getItem('token')
+    }
   }
 };
 </script>

@@ -17,197 +17,10 @@
         </div>
       </div>
       <div class="chats d-flex flex-column">
-        <div class="user d-flex">
+        <div v-for="chat in chatSections" :key="chat.id" class="user d-flex">
           <b-avatar size="3.3rem" src="/nayeon.jpg"></b-avatar>
           <span
             >Im Nayeon
-            <p class="active">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
-              accusamus cum non.
-            </p>
-          </span>
-          <div class="unread">
-            <b-icon
-              icon="circle-fill"
-              style="color: #fec5bb"
-              scale=".8rem"
-            ></b-icon>
-          </div>
-        </div>
-        <div class="user d-flex">
-          <b-avatar size="3.3rem" src="/nayeon-2.jpg"></b-avatar>
-          <span
-            >Nguyễn Tuấn Nghĩa
-            <p class="active">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
-              accusamus cum non.
-            </p>
-          </span>
-          <div class="unread">
-            <b-icon
-              icon="circle-fill"
-              style="color: #fec5bb"
-              scale=".8rem"
-            ></b-icon>
-          </div>
-        </div>
-        <div class="user d-flex">
-          <b-avatar size="3.3rem" src="/nayeon.jpg"></b-avatar>
-          <span
-            >Im Nayeon
-            <p class="active">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
-              accusamus cum non.
-            </p>
-          </span>
-          <div class="unread">
-            <b-icon
-              icon="circle-fill"
-              style="color: #fec5bb"
-              scale=".8rem"
-            ></b-icon>
-          </div>
-        </div>
-        <div class="user d-flex">
-          <b-avatar size="3.3rem" src="/nayeon-2.jpg"></b-avatar>
-          <span
-            >Nguyễn Tuấn Nghĩa
-            <p class="active">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
-              accusamus cum non.
-            </p>
-          </span>
-          <div class="unread">
-            <b-icon
-              icon="circle-fill"
-              style="color: #fec5bb"
-              scale=".8rem"
-            ></b-icon>
-          </div>
-        </div>
-        <div class="user d-flex">
-          <b-avatar size="3.3rem" src="/nayeon.jpg"></b-avatar>
-          <span
-            >Im Nayeon
-            <p class="active">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
-              accusamus cum non.
-            </p>
-          </span>
-          <div class="unread">
-            <b-icon
-              icon="circle-fill"
-              style="color: #fec5bb"
-              scale=".8rem"
-            ></b-icon>
-          </div>
-        </div>
-        <div class="user d-flex">
-          <b-avatar size="3.3rem" src="/nayeon-2.jpg"></b-avatar>
-          <span
-            >Nguyễn Tuấn Nghĩa
-            <p class="active">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
-              accusamus cum non.
-            </p>
-          </span>
-          <div class="unread">
-            <b-icon
-              icon="circle-fill"
-              style="color: #fec5bb"
-              scale=".8rem"
-            ></b-icon>
-          </div>
-        </div>
-        <div class="user d-flex">
-          <b-avatar size="3.3rem" src="/nayeon.jpg"></b-avatar>
-          <span
-            >Im Nayeon
-            <p class="active">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
-              accusamus cum non.
-            </p>
-          </span>
-          <div class="unread">
-            <b-icon
-              icon="circle-fill"
-              style="color: #fec5bb"
-              scale=".8rem"
-            ></b-icon>
-          </div>
-        </div>
-        <div class="user d-flex">
-          <b-avatar size="3.3rem" src="/nayeon-2.jpg"></b-avatar>
-          <span
-            >Nguyễn Tuấn Nghĩa
-            <p class="active">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
-              accusamus cum non.
-            </p>
-          </span>
-          <div class="unread">
-            <b-icon
-              icon="circle-fill"
-              style="color: #fec5bb"
-              scale=".8rem"
-            ></b-icon>
-          </div>
-        </div>
-        <div class="user d-flex">
-          <b-avatar size="3.3rem" src="/nayeon.jpg"></b-avatar>
-          <span
-            >Im Nayeon
-            <p class="active">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
-              accusamus cum non.
-            </p>
-          </span>
-          <div class="unread">
-            <b-icon
-              icon="circle-fill"
-              style="color: #fec5bb"
-              scale=".8rem"
-            ></b-icon>
-          </div>
-        </div>
-        <div class="user d-flex">
-          <b-avatar size="3.3rem" src="/nayeon-2.jpg"></b-avatar>
-          <span
-            >Nguyễn Tuấn Nghĩa
-            <p class="active">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
-              accusamus cum non.
-            </p>
-          </span>
-          <div class="unread">
-            <b-icon
-              icon="circle-fill"
-              style="color: #fec5bb"
-              scale=".8rem"
-            ></b-icon>
-          </div>
-        </div>
-        <div class="user d-flex">
-          <b-avatar size="3.3rem" src="/nayeon.jpg"></b-avatar>
-          <span
-            >Im Nayeon
-            <p class="active">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
-              accusamus cum non.
-            </p>
-          </span>
-          <div class="unread">
-            <b-icon
-              icon="circle-fill"
-              style="color: #fec5bb"
-              scale=".8rem"
-            ></b-icon>
-          </div>
-        </div>
-        <div class="user d-flex">
-          <b-avatar size="3.3rem" src="/nayeon-2.jpg"></b-avatar>
-          <span
-            >Nguyễn Tuấn Nghĩa
             <p class="active">
               Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
               accusamus cum non.
@@ -319,18 +132,10 @@
         </div>
       </div>
     </section>
-    <!-- <form @submit.prevent="pressed()">
-      <input type="text" v-model="email" />
-      <input type="text" v-model="password" />
-      <button type="submit">Click me</button>
-    </form> -->
   </page-container>
 </template>
 
 <script>
-import firebase from "firebase/app";
-import "firebase/auth";
-
 import { mapState } from "vuex";
 
 import new_conversation from "../page_modals/new_conversation.vue";
@@ -339,6 +144,7 @@ export default {
   components: { new_conversation, paticipants },
   data() {
     return {
+      chatSections: [],
       isActive: false,
       onFocus: false,
       email: "",
@@ -351,18 +157,6 @@ export default {
   methods: {
     onClickOutside() {
       $nuxt.$emit("closeModal");
-    },
-    pressed() {
-      console.log(456);
-      firebase
-        .auth()
-        .signInWithEmailAndPassword(this.email, this.password)
-        .then(data => {
-          console.log(data);
-        })
-        .catch(err => {
-          console.log(err);
-        });
     },
     async sendMessage(content) {
       await this.$axios
@@ -424,7 +218,7 @@ export default {
         white-space: nowrap;
       }
       .active {
-        color: #ffadad;
+        color: #273849;
         font-weight: bold;
       }
     }

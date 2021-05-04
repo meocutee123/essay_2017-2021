@@ -95,6 +95,7 @@
 <script>
 import { mapState } from "vuex";
 export default {
+  props: ["isNew"],
   data() {
     return {
       isLoading: false
@@ -102,9 +103,8 @@ export default {
   },
   async mounted() {
     this.isLoading = true;
-    await this.$store.dispatch("getMessages").then(() => {
-      this.isLoading = false;
-    });
+    await this.$store.dispatch("getMessages");
+    this.isLoading = false;
     this.scrollToElement();
   },
   methods: {
@@ -131,7 +131,7 @@ export default {
   position: absolute;
   width: 100%;
   bottom: 3.5rem;
-  background-color: #fff7f6;
+  background-color: #e3fff2;
   height: calc(100% - 56px);
   overflow-y: scroll;
   border-radius: 5px;
@@ -157,7 +157,7 @@ export default {
         max-width: 30em;
         margin-bottom: 0.7rem !important;
         // looks
-        background-color: #ffadad;
+        background-color: #41b883;
         padding: 0.5em 1em;
         font-size: 1em;
         border-radius: 1rem;

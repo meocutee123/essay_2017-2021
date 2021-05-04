@@ -11,7 +11,7 @@
 export default {
   methods:{
     signOut(){
-      alert("Signing out")
+      this.$router.push('/login')
     }
   }
 };

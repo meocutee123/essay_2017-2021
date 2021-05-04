@@ -11,25 +11,22 @@
           type="text"
           debounce="500"
           list="people"
-          v-model="value"
+          @change="onChange($event)"
         ></b-form-input>
         <datalist id="people">
-          <option v-for="(people, index) in sizes" :key="index">{{
+          <option v-for="(people, index) in users" :key="index">{{
             people
           }}</option>
         </datalist>
       </div>
       <div class="selected mb-1">
-        <span class="mr-1"
-          >Nghia <b-icon icon="x" scale="1.5rem"></b-icon
-        ></span>
-        <span class="mr-1">Meo <b-icon icon="x" scale="1.5rem"></b-icon></span>
-        <span class="mr-1"
-          >Cutee <b-icon icon="x" scale="1.5rem"></b-icon
+        <span class="mr-1" v-for="(value, index) in values" :key="index"
+          >{{ value
+          }}<b-icon icon="x" scale="1.5rem" @click="onDelete(index)"></b-icon
         ></span>
       </div>
       <div class="chat-area">
-        <ChatSection />
+        <ChatSection :isNew="true" />
         <Playground />
       </div>
     </div>
@@ -37,12 +34,31 @@
 </template>
 
 <script>
+// var admin = require('firebase-admin');
 export default {
   data() {
     return {
-      value: "",
-      sizes: ["Small", "Medium", "Large", "Extra Large", "Extra Large"]
+      values: [],
+      users: []
     };
+  },
+  mounted() {
+    this.getUsers();
+  },
+  methods: {
+    async getUsers() {
+      await this.$axios.get("/users.json").then(response => {
+        for (let index in response.data) {
+          this.users.push(response.data[index].email);
+        }
+      });
+    },
+    onChange(e) {
+      this.values.push(e);
+    },
+    onDelete(index) {
+      this.values.splice(index, 1);
+    }
   }
 };
 </script>

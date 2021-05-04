@@ -59,7 +59,7 @@ export default {
   bottom: 0;
   width: 100%;
   .pg-actions {
-    color: #000000;
+    color: #41b883;
     padding: 5px 15px 5px 10px;
     min-width: 150px;
     transition: 0.2s;
@@ -81,10 +81,10 @@ export default {
         border-radius: 2rem;
         outline: none;
         border: none;
-        background-color: #ffadad;
+        background-color: #41b883;
         resize: none;
         padding-left: 0.5rem;
-        color: #000000;
+        color: #273849;
         font-size: 1rem;
         &::-webkit-scrollbar {
           display: none;
@@ -92,22 +92,22 @@ export default {
       }
       .icon-smile {
         position: absolute;
-        color: #000000;
+        color: #41b883;
         top: 0.5rem;
         right: 0.5rem;
         transition: 0.2s;
         &:hover {
           cursor: pointer;
-          color: #fec5bb;
+          color: #98dfbf;
         }
       }
     }
     .focus-icon {
-      color: #000000;
+      color: #41b883;
       transition: 0.2s;
       &:hover {
         cursor: pointer;
-        color: #fec5bb;
+        color: #98dfbf;
       }
     }
   }
