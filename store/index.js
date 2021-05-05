@@ -1,5 +1,6 @@
 export const state = () => ({
-  messages: []
+  messages: [],
+  chatSections: []
 });
 export const getters = {};
 export const actions = {
@@ -24,10 +25,21 @@ export const actions = {
     await this.$axios
       .delete(`/messages/${id}.json`)
       .then(res => {
-        console.log(res);
         commit("deleteMessage", id);
       })
       .catch(err => console.log(err));
+  },
+  async getChatSection({ commit }) {
+    await this.$axios.get("chat-sections.json").then(response => {
+      const payload = [];
+      for (let index in response.data) {
+        if (response.data[index].users.includes(localStorage.getItem("loged-id"))) {
+          payload.push({ ...response.data[index], id: index });
+        }
+        continue;
+      }
+      commit("setChatSection", payload);
+    });
   }
 };
 export const mutations = {
@@ -42,5 +54,9 @@ export const mutations = {
       state.messages.findIndex(i => i.id === payload),
       1
     );
+  },
+  setChatSection(state, payload) {
+    state.chatSections = payload;
+    console.log(state.chatSections);
   }
 };

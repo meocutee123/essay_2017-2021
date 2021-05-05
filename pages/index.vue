@@ -20,7 +20,7 @@
         <div v-for="chat in chatSections" :key="chat.id" class="user d-flex">
           <b-avatar size="3.3rem" src="/nayeon.jpg"></b-avatar>
           <span
-            >Im Nayeon
+            >{{ chat.name }}
             <p class="active">
               Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
               accusamus cum non.
@@ -68,7 +68,7 @@
         </div>
       </div>
       <div :class="['blink d-flex flex-column', { blinkActive: isActive }]">
-        <ChatSection :messages="messages">
+        <ChatSection :messages="messages" @getChatSection="getData()">
           <template v-slot:greetings>
             <div class="greetings text-center p-2">
               <b-avatar
@@ -144,17 +144,20 @@ export default {
   components: { new_conversation, paticipants },
   data() {
     return {
-      chatSections: [],
       isActive: false,
       onFocus: false,
       email: "",
       password: ""
     };
   },
-  mounted(){
-    this.$store.dispatch('getMessages')
+  mounted() {
+    this.getData()
   },
   methods: {
+    async getData(status) {
+      await this.$store.dispatch("getMessages");
+      this.$store.dispatch("getChatSection");
+    },
     onClickOutside() {
       $nuxt.$emit("closeModal");
     },
@@ -162,16 +165,17 @@ export default {
       await this.$axios
         .post("messages.json", JSON.stringify(content))
         .then(response => {
-          console.log(response.data);
           this.$store.dispatch("updateMessage", content);
         })
         .catch(err => {
           console.log(err);
         });
+      this.getData();
+      console.log(this.chatSections);
     }
   },
   computed: {
-    ...mapState(["messages"])
+    ...mapState(["messages", "chatSections"])
   }
 };
 </script>

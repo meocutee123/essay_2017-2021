@@ -14,7 +14,7 @@
           @change="onChange($event)"
         ></b-form-input>
         <datalist id="people">
-          <option v-for="(people, index) in users" :key="index">{{
+          <option v-for="(people, index) in names" :key="index">{{
             people
           }}</option>
         </datalist>
@@ -27,7 +27,7 @@
       </div>
       <div class="chat-area">
         <ChatSection :isNew="true" />
-        <Playground />
+        <Playground @onClickSend="newConversation" />
       </div>
     </div>
   </div>
@@ -39,25 +39,46 @@ export default {
   data() {
     return {
       values: [],
-      users: []
+      users: [],
+      names: [],
+      listUsers: []
     };
   },
   mounted() {
     this.getUsers();
+    this.listUsers.push(localStorage.getItem("loged-id"));
   },
   methods: {
     async getUsers() {
       await this.$axios.get("/users.json").then(response => {
         for (let index in response.data) {
-          this.users.push(response.data[index].email);
+          if(response.data[index].id === localStorage.getItem('loged-id')) continue
+          let { name } = response.data[index];
+          this.names.push(`${name.firstName} ${name.lastName}`);
+          this.users.push({
+            ...response.data[index],
+            name: `${name.firstName} ${name.lastName}`
+          });
         }
       });
     },
     onChange(e) {
       this.values.push(e);
+      this.listUsers.push(
+        this.users.find(item => item.name === e).id
+      );
     },
     onDelete(index) {
       this.values.splice(index, 1);
+      this.listUsers.splice(index + 1, 1);
+    },
+    async newConversation(content) {
+      if (this.listUsers.length === 1) return;
+      await this.$axios
+        .post("/chat-sections.json", JSON.stringify({
+          users: this.listUsers.join(","),
+          name: this.values.join(", ")
+        }))
     }
   }
 };
