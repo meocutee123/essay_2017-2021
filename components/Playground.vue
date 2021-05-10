@@ -35,6 +35,7 @@
 
 <script>
 export default {
+  props: ["sectionID"],
   data() {
     return {
       onFocus: false,
@@ -42,11 +43,25 @@ export default {
     };
   },
   methods: {
-    onClickSend() {
-      this.$emit("onClickSend", {
-        content: this.content
-      });
-      this.content = ''
+    async onClickSend() {
+      await this.$axios
+        .post("messages.json", JSON.stringify(this.message()))
+        .then(response => {
+          this.content = "";
+          this.$emit('sent', this.content)
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    message() {
+      return {
+        message: this.content,
+        created_at: new Date(),
+        chat_section: this.sectionID,
+        user: window.localStorage.getItem("loged-id"),
+        status: 1
+      };
     }
   }
 };
