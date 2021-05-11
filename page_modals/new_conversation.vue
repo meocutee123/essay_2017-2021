@@ -26,15 +26,14 @@
         ></span>
       </div>
       <div class="chat-area">
-        <ChatSection :isNew="true" />
-        <Playground @onClickSend="newConversation" />
+        <!-- <ChatSection :isNew="true" /> -->
+        <Playground @sent="newConversation" />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-// var admin = require('firebase-admin');
 export default {
   data() {
     return {
@@ -52,7 +51,8 @@ export default {
     async getUsers() {
       await this.$axios.get("/users.json").then(response => {
         for (let index in response.data) {
-          if(response.data[index].id === localStorage.getItem('loged-id')) continue
+          if (response.data[index].id === localStorage.getItem("loged-id"))
+            continue;
           let { name } = response.data[index];
           this.names.push(`${name.firstName} ${name.lastName}`);
           this.users.push({
@@ -64,9 +64,7 @@ export default {
     },
     onChange(e) {
       this.values.push(e);
-      this.listUsers.push(
-        this.users.find(item => item.name === e).id
-      );
+      this.listUsers.push(this.users.find(item => item.name === e).id);
     },
     onDelete(index) {
       this.values.splice(index, 1);
@@ -75,10 +73,21 @@ export default {
     async newConversation(content) {
       if (this.listUsers.length === 1) return;
       await this.$axios
-        .post("/chat-sections.json", JSON.stringify({
-          users: this.listUsers.join(","),
-          name: this.values.join(", ")
-        }))
+        .post(
+          "/chat-sections.json",
+          JSON.stringify({
+            users: this.listUsers.join(","),
+            name: this.values.join(", ")
+          })
+        )
+        .then(response => {
+          console.log(response);
+          this.$axios
+            .patch(`messages/${content.id}.json`, {
+              chat_section: response.data.name
+            })
+            .catch(err => console.log(err));
+        });
     }
   }
 };

@@ -26,7 +26,7 @@
           <span><b-icon icon="search" scale="1rem"></b-icon> Find</span>
         </p>
         <b-modal id="paticipants" scrollable hide-footer hide-header>
-          <paticipants />
+          <paticipants :sectionID="sectionData.id" />
         </b-modal>
       </div>
     </div>
@@ -58,7 +58,25 @@
                     : { 'background-color': '#fcbf49' }
                 "
               >
-                {{ content.message }}
+                <b-row v-if="Array.isArray(content.message)">
+                  <b-col
+                    cols="6"
+                    v-for="(src, index) in content.message"
+                    :key="index"
+                  >
+                    <img
+                      :src="`${src}`"
+                      class="m-1"
+                      alt=""
+                      style="border-radius: 5px;
+                             width: 160px;
+                             height: 100px;
+                              object-fit: cover;"
+                    />
+                  </b-col>
+                </b-row>
+
+                <span v-else>{{ content.message }}</span>
               </div>
               <div
                 class="actions"
@@ -192,7 +210,6 @@ export default {
           })
         )
         .then(res => {
-          console.log(res);
           this.getData();
         })
         .catch(err => console.log(err));

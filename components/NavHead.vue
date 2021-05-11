@@ -103,7 +103,20 @@ export default {
       this.$modal.close({ name: "modal" });
     });
   },
+  mounted() {
+    this.getLogedUser();
+  },
   methods: {
+    async getLogedUser() {
+      await this.$axios.get(`users.json`).then(({ data }) => {
+        for (let index in data) {
+          data[index].id === window.localStorage.getItem("loged-id") &&
+            this.$axios
+              .get(`users/${index}.json`)
+              .then();
+        }
+      });
+    },
     openModal(name) {
       this.$modal.open({ name: "modal" });
       this.isComponent = name;
@@ -112,9 +125,9 @@ export default {
       this.$modal.close({ name: "modal" });
     }
   },
-  computed:{
-    userLoged(){
-      window.localStorage.getItem('token')
+  computed: {
+    userLoged() {
+      window.localStorage.getItem("loged-id");
     }
   }
 };

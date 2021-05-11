@@ -116,7 +116,6 @@ export default {
             .auth()
             .signInWithEmailAndPassword(this.form.email, this.form.password)
             .then(response => {
-              localStorage.setItem("token", response.user.refreshToken);
               localStorage.setItem("loged-id", response.user.uid);
               this.isSignUp = false;
               this.isDisabled = false;
