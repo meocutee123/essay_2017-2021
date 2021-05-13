@@ -12,30 +12,6 @@
           </div>
           <b-icon icon="x" scale="2.3rem"></b-icon>
         </div>
-        <div class="person d-flex">
-          <b-avatar class="mr-2" src="/wendy.jpg" size="4rem"></b-avatar>
-          <div class="d-flex flex-column p-2">
-            <h5 class="font-weight-bold">Son Seungwan</h5>
-            <span>Add by you</span>
-          </div>
-          <b-icon icon="x" scale="2.3rem"></b-icon>
-        </div>
-        <div class="person d-flex">
-          <b-avatar class="mr-2" src="/wendy.jpg" size="4rem"></b-avatar>
-          <div class="d-flex flex-column p-2">
-            <h5 class="font-weight-bold">Son Seungwan</h5>
-            <span>Add by you</span>
-          </div>
-          <b-icon icon="x" scale="2.3rem"></b-icon>
-        </div>
-        <div class="person d-flex">
-          <b-avatar class="mr-2" src="/wendy.jpg" size="4rem"></b-avatar>
-          <div class="d-flex flex-column p-2">
-            <h5 class="font-weight-bold">Son Seungwan</h5>
-            <span>Add by you</span>
-          </div>
-          <b-icon icon="x" scale="2.3rem"></b-icon>
-        </div>
       </div>
       <div class="outnumber"></div>
     </div>
@@ -43,7 +19,37 @@
 </template>
 
 <script>
-export default {};
+export default {
+  props: ["sectionID"],
+  data() {
+    return {
+      paticipants: [],
+      listUsers: ""
+    };
+  },
+  async mounted() {
+    await this.$axios
+      .get(`chat-sections/${this.sectionID}.json`)
+      .then(response => {
+        this.listUsers = response.data.users;
+      });
+    this.getParticipants();
+  },
+  methods: {
+    async getParticipants() {
+      const list = this.listUsers.split(",")
+      for (let item in list) {
+        await this.$axios.get(`users/${list[item]}.json`).then((res) => {
+          console.log(res);
+          // for (let i in data) {
+          //   this.paticipants.push({ ...data[i], id: i });
+          // }
+        });
+      }
+      console.log(this.paticipants);
+    }
+  }
+};
 </script>
 
 <style lang="scss" scoped>

@@ -11,26 +11,23 @@
           type="text"
           debounce="500"
           list="people"
-          v-model="value"
+          @change="onChange($event)"
         ></b-form-input>
         <datalist id="people">
-          <option v-for="(people, index) in sizes" :key="index">{{
+          <option v-for="(people, index) in names" :key="index">{{
             people
           }}</option>
         </datalist>
       </div>
       <div class="selected mb-1">
-        <span class="mr-1"
-          >Nghia <b-icon icon="x" scale="1.5rem"></b-icon
-        ></span>
-        <span class="mr-1">Meo <b-icon icon="x" scale="1.5rem"></b-icon></span>
-        <span class="mr-1"
-          >Cutee <b-icon icon="x" scale="1.5rem"></b-icon
+        <span class="mr-1" v-for="(value, index) in values" :key="index"
+          >{{ value
+          }}<b-icon icon="x" scale="1.5rem" @click="onDelete(index)"></b-icon
         ></span>
       </div>
       <div class="chat-area">
-        <ChatSection />
-        <Playground />
+        <!-- <ChatSection :isNew="true" /> -->
+        <Playground @sent="newConversation" />
       </div>
     </div>
   </div>
@@ -40,9 +37,60 @@
 export default {
   data() {
     return {
-      value: "",
-      sizes: ["Small", "Medium", "Large", "Extra Large", "Extra Large"]
+      values: [],
+      users: [],
+      names: [],
+      listUsers: [],
+      loged_id: null
     };
+  },
+  mounted() {
+    this.loged_id = window.localStorage.getItem("loged_id");
+    this.getUsers();
+    this.listUsers.push(this.loged_id);
+  },
+  methods: {
+    async getUsers() {
+      await this.$axios.get("/users.json").then(response => {
+        for (let index in response.data) {
+          if (response.data[index].id === this.loged_id)
+            continue;
+          let { name } = response.data[index];
+          this.names.push(`${name.firstName} ${name.lastName}`);
+          this.users.push({
+            ...response.data[index],
+            name: `${name.firstName} ${name.lastName}`
+          });
+        }
+      });
+    },
+    onChange(e) {
+      this.values.push(e);
+      this.listUsers.push(this.users.find(item => item.name === e).id);
+    },
+    onDelete(index) {
+      this.values.splice(index, 1);
+      this.listUsers.splice(index + 1, 1);
+    },
+    async newConversation(content) {
+      if (this.listUsers.length === 1) return;
+      await this.$axios
+        .post(
+          "/chat-sections.json",
+          JSON.stringify({
+            users: this.listUsers.join(","),
+            name: this.values.join(", ")
+          })
+        )
+        .then(response => {
+          console.log(response);
+          this.$axios
+            .patch(`messages/${content.id}.json`, {
+              chat_section: response.data.name
+            })
+            .catch(err => console.log(err));
+        });
+    }
   }
 };
 </script>
