@@ -57,7 +57,7 @@
           {{ formText.button }}
         </button>
         <span class="w-100" v-if="isSignUp">
-          <span @click="onSignUp()">Sign in</span>
+          <span @click="onSubmit()">Sign in</span>
         </span>
       </form>
     </div>
@@ -74,8 +74,6 @@
 </template>
 
 <script>
-import firebase from "firebase/app";
-import "firebase/auth";
 export default {
   layout: "empty",
   data() {
@@ -109,68 +107,14 @@ export default {
         (this.isSignUp = false);
     },
     async onSubmit() {
-      this.isDisabled = true;
-      this.isSignUp
-        ? this.doSignUp()
-        : await firebase
-            .auth()
-            .signInWithEmailAndPassword(this.form.email, this.form.password)
-            .then(response => {
-              localStorage.setItem("loged-id", response.user.uid);
-              this.isSignUp = false;
-              this.isDisabled = false;
-              this.$router.push("/");
+      await this.$store
+            .dispatch("onSubmit", { ...this.form, vm: this }).then(res => {
+              res === true && this.$router.push('/')
             })
-            .catch(err => {
-              this.isDisabled = false;
-              this.$bvToast.toast("Username or password is incorrect!", {
-                title: "Error!",
-                variant: "danger",
-                solid: true
-              });
-            });
     },
     async doSignUp() {
-      this.isDisabled = true;
-      if (this.form.password == this.form.confirmPassword) {
-        await firebase
-          .auth()
-          .createUserWithEmailAndPassword(this.form.email, this.form.password)
-          .then(response => {
-            this.$bvToast.toast("Account created successfully!", {
-              title: "Success",
-              variant: "success",
-              solid: true
-            });
-            this.$axios.post("users.json", {
-              email: this.form.email,
-              password: this.form.password,
-              id: response.user.uid,
-              name:{
-                firstName: this.form.name.firstName,
-                lastName: this.form.name.lastName
-              }
-            });
-            this.isDisabled = false;
-            this.isSignUp = false;
-            this.formText.header = "Sign in";
-            this.formText.button = "Sign in";
-          })
-          .catch(err => {
-            this.isDisabled = false;
-            this.$bvToast.toast(err.message, {
-              title: "Error",
-              variant: "danger",
-              solid: true
-            });
-          });
-        return;
-      }
-      this.$bvToast.toast("Password and confirm password do not match", {
-        title: "Error",
-        variant: "danger",
-        solid: true
-      });
+      await this.$store.dispatch('onCreateUser', {...this.form, vm: this})
+      
     }
   }
 };

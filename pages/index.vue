@@ -42,7 +42,11 @@
       </div>
     </template>
     <Default v-if="isDefaultView" />
-    <ChatSection ref="chatSection" v-else :sectionData="sectionData" />
+    <ChatSection
+      ref="chatSection"
+      v-else
+      :sectionData="sectionData"
+    />
     <!-- <Playground @onClickSend="sendMessage" /> -->
   </page-container>
 </template>
@@ -50,7 +54,7 @@
 <script>
 import new_conversation from "../page_modals/new_conversation.vue";
 export default {
-  components: { new_conversation},
+  components: { new_conversation },
   data() {
     return {
       isActive: false,
@@ -59,10 +63,12 @@ export default {
       password: "",
       isDefaultView: true,
       chatSections: [],
-      sectionData: {}
+      sectionData: {},
+      loged_id: null
     };
   },
   mounted() {
+    this.loged_id = window.localStorage.getItem('loged_id')
     this.getData();
   },
   methods: {
@@ -70,11 +76,7 @@ export default {
       await this.$axios.get("chat-sections.json").then(response => {
         const payload = [];
         for (let index in response.data) {
-          if (
-            response.data[index].users.includes(
-              localStorage.getItem("loged-id")
-            )
-          ) {
+          if (response.data[index].users.includes(this.loged_id)) {
             payload.push({ ...response.data[index], id: index });
           }
           continue;
@@ -87,8 +89,8 @@ export default {
       await this.$axios
         .get(`/chat-sections/${id}.json`)
         .then(response => {
-          this.sectionData = Object.assign({}, response.data, {id: id});
-          this.$refs.chatSection.getData()
+          this.sectionData = Object.assign({}, response.data, { id: id });
+          this.$refs.chatSection.getData();
         })
         .catch(err => {
           console.log(err);
@@ -97,9 +99,7 @@ export default {
     async sendMessage(content) {
       await this.$axios
         .post("messages.json", JSON.stringify(content))
-        .then(response => {
-          
-        })
+        .then(response => {})
         .catch(err => {
           console.log(err);
         });

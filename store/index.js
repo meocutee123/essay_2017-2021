@@ -1,62 +1,64 @@
+import firebase from "firebase/app";
+import "firebase/auth";
 export const state = () => ({
+  loged_infor: {
+    state: false,
+    loged_id: null
+  },
   messages: [],
   chatSections: []
 });
 export const getters = {};
 export const actions = {
-  async getMessages({ commit }) {
-    await this.$axios
-      .get("/messages.json")
+  async onSubmit({ commit }, { email, password, vm }) {
+    return await firebase
+      .auth()
+      .signInWithEmailAndPassword(email, password)
       .then(response => {
-        const data = [];
-        for (let index in response.data) {
-          data.push({ id: index, ...response.data[index] });
-        }
-        commit("setMessages", data);
+        commit("setAuthorize", response.user);
+        return true
       })
-      .catch(err => {
-        console.log(err);
+      .catch((err) => {
+        vm.$root.$bvToast.toast("Username or password is incorrect!", {
+          title: "Error!",
+          variant: "danger",
+          solid: true
+        });
       });
   },
-  updateMessage({ commit }, payload) {
-    commit("updateMessage", payload);
-  },
-  async deleteMessage({ commit }, id) {
-    await this.$axios
-      .delete(`/messages/${id}.json`)
-      .then(res => {
-        commit("deleteMessage", id);
+  async onCreateUser({ commit }, { email, password, name, vm }) {
+    await firebase
+      .auth()
+      .createUserWithEmailAndPassword(email, password)
+      .then(response => {
+        vm.$bvToast.toast("Account created successfully!", {
+          title: "Success",
+          variant: "success",
+          solid: true
+        });
+        this.$axios.post("users.json", {
+          email: email,
+          password: password,
+          id: response.user.uid,
+          name: {
+            firstName: name.firstName,
+            lastName: name.lastName
+          }
+        });
+        return true;
       })
-      .catch(err => console.log(err));
-  },
-  async getChatSection({ commit }) {
-    await this.$axios.get("chat-sections.json").then(response => {
-      const payload = [];
-      for (let index in response.data) {
-        if (response.data[index].users.includes(localStorage.getItem("loged-id"))) {
-          payload.push({ ...response.data[index], id: index });
-        }
-        continue;
-      }
-      commit("setChatSection", payload);
-    });
+      .catch(err => {
+        this.$bvToast.toast(err.message, {
+          title: "Error",
+          variant: "danger",
+          solid: true
+        });
+      });
   }
 };
 export const mutations = {
-  updateMessage(state, payload) {
-    state.messages.push(payload);
-  },
-  setMessages(state, payload) {
-    state.messages = payload;
-  },
-  deleteMessage(state, payload) {
-    state.messages.splice(
-      state.messages.findIndex(i => i.id === payload),
-      1
-    );
-  },
-  setChatSection(state, payload) {
-    state.chatSections = payload;
-    console.log(state.chatSections);
+  setAuthorize(state, payload) {
+    state.loged_infor = true;
+    window.localStorage.setItem('loged_id', payload.uid)
   }
 };

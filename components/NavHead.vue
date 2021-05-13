@@ -85,11 +85,12 @@ import profile from "~/page_modals/profile";
 import settings from "~/page_modals/settings";
 import friends from "~/page_modals/friends";
 import notification from "~/page_modals/notification";
+
 export default {
   data() {
     return {
       isActive: false,
-      isComponent: ""
+      isComponent: "", loged_id: null
     };
   },
   components: {
@@ -104,16 +105,15 @@ export default {
     });
   },
   mounted() {
+    this.loged_id = window.localStorage.getItem('loged_id')
     this.getLogedUser();
   },
   methods: {
     async getLogedUser() {
       await this.$axios.get(`users.json`).then(({ data }) => {
         for (let index in data) {
-          data[index].id === window.localStorage.getItem("loged-id") &&
-            this.$axios
-              .get(`users/${index}.json`)
-              .then();
+          data[index].id === this.loged_id &&
+            this.$axios.get(`users/${index}.json`).then();
         }
       });
     },
@@ -125,11 +125,6 @@ export default {
       this.$modal.close({ name: "modal" });
     }
   },
-  computed: {
-    userLoged() {
-      window.localStorage.getItem("loged-id");
-    }
-  }
 };
 </script>
 

@@ -40,18 +40,20 @@ export default {
       values: [],
       users: [],
       names: [],
-      listUsers: []
+      listUsers: [],
+      loged_id: null
     };
   },
   mounted() {
+    this.loged_id = window.localStorage.getItem("loged_id");
     this.getUsers();
-    this.listUsers.push(localStorage.getItem("loged-id"));
+    this.listUsers.push(this.loged_id);
   },
   methods: {
     async getUsers() {
       await this.$axios.get("/users.json").then(response => {
         for (let index in response.data) {
-          if (response.data[index].id === localStorage.getItem("loged-id"))
+          if (response.data[index].id === this.loged_id)
             continue;
           let { name } = response.data[index];
           this.names.push(`${name.firstName} ${name.lastName}`);

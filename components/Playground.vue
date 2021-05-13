@@ -12,7 +12,8 @@
       />
       <b-icon icon="image" scale="1.3rem" @click="$refs.file.click()"></b-icon>
       <b-icon icon="share-fill" scale="1.3rem"></b-icon>
-      <b-icon icon="mic-fill" scale="1.3rem"></b-icon>
+      <input type="file" accept="audio/*;capture=microphone" ref="audio" style="display: none"/>
+      <b-icon icon="mic-fill" scale="1.3rem" @click="$refs.audio.click()"></b-icon>
     </div>
     <div class="message d-flex">
       <div class="text">
@@ -60,8 +61,12 @@ export default {
       onFocus: false,
       content: "",
       images: [],
-      tasks: []
+      tasks: [],
+      loged_id: null
     };
+  },
+  mounted(){
+    this.loged_id = window.localStorage.getItem('loged_id')
   },
   methods: {
     onDeleteImage(index) {
@@ -99,14 +104,15 @@ export default {
           () => (this.images = [])
         );
       }
-      this.content !== "" && await this.sendHandler(params);
+      this.content !== "" && (await this.sendHandler(params));
       this.content = "";
-      this.$emit("sent");
     },
-    async sendHandler(params, withoutText) {
+    async sendHandler(params) {
       await this.$axios
         .post("messages.json", JSON.stringify(params))
-        .then(response => {})
+        .then(response => {
+          this.$emit("sent", params);
+        })
         .catch(err => {
           console.log(err);
         });
@@ -116,7 +122,7 @@ export default {
         message: this.content,
         created_at: new Date(),
         chat_section: this.sectionID,
-        user: window.localStorage.getItem("loged-id"),
+        user: this.loged_id,
         status: 1
       };
     }

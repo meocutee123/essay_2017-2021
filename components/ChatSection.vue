@@ -45,7 +45,7 @@
             :key="index"
             :class="
               `conversations d-flex align-items-${
-                content.user === logedUser ? 'end ml-auto' : 'start'
+                content.user === loged_id ? 'end ml-auto' : 'start'
               } flex-column p-2 `
             "
           >
@@ -53,7 +53,7 @@
               <div
                 class="message"
                 :style="
-                  content.user === logedUser
+                  content.user === loged_id
                     ? { 'background-color': '#41b883' }
                     : { 'background-color': '#fcbf49' }
                 "
@@ -81,26 +81,26 @@
               <div
                 class="actions"
                 :style="
-                  content.user === logedUser
+                  content.user === loged_id
                     ? { left: '-20px' }
                     : { right: '-50px' }
                 "
               >
                 <b-icon
-                  v-if="content.user === logedUser"
+                  v-if="content.user === loged_id"
                   icon="three-dots"
                 ></b-icon>
                 <div
-                  v-if="content.user === logedUser"
+                  v-if="content.user === loged_id"
                   class="action d-flex flex-column"
                 >
-                  <span @click="onDelete(content.id)">Delete</span>
+                  <span @click="onDelete(content.id, index)">Delete</span>
                 </div>
               </div>
             </div>
             <b-avatar
               v-if="content.status === 1"
-              :class="`${content.user === logedUser} ? 'to' : 'from'`"
+              :class="`${content.user === loged_id} ? 'to' : 'from'`"
               size="1rem"
             ></b-avatar>
           </div>
@@ -121,20 +121,13 @@
       <div class="images">
         <h4 class="font-weight-bold">Images</h4>
         <b-row class="p-2">
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
+          <b-col
+            v-for="(src, index) in images"
+            :key="index"
+            cols="6"
+            class="p-2"
+          >
+            <div><img :src="`${src}`" alt="" /></div>
           </b-col>
         </b-row>
         <h4 class="font-weight-bold">Files</h4>
@@ -157,7 +150,7 @@
         </b-row>
       </div>
     </div>
-    <Playground :sectionID="sectionData.id" @sent="loadOnSent()" />
+    <Playground :sectionID="sectionData.id" @sent="loadOnSent" />
   </section>
 </template>
 
@@ -177,10 +170,13 @@ export default {
       defaultView: true,
       slide: 0,
       sliding: null,
-      messages: []
+      messages: [],
+      images: [],
+      loged_id: null
     };
   },
   async mounted() {
+    this.loged_id = window.localStorage.getItem('loged_id')
     this.getData();
     this.scrollToElement();
   },
@@ -188,42 +184,42 @@ export default {
     onClickOutside() {
       $nuxt.$emit("closeModal");
     },
-    loadOnSent() {
-      this.getData();
+    loadOnSent(params) {
+      this.messages.push(params);
+      this.scrollToElement();
     },
     async getData() {
-      this.messages = [];
+      const listMessage = [];
+      const listImages = [];
       await this.$axios.get("messages.json").then(res => {
         for (let index in res.data) {
-          res.data[index].chat_section == this.sectionData.id &&
-            this.messages.push({ id: index, ...res.data[index] });
+          let item = res.data[index];
+          if (item.chat_section === this.sectionData.id && item.status === 1) {
+            listMessage.push({ id: index, ...item });
+            if (Array.isArray(item.message)) {
+              listImages.push(...item.message);
+            }
+          }
         }
+        this.messages = listMessage;
+        this.images = listImages;
       });
       this.scrollToElement();
     },
-    async onDelete(id) {
-      await this.$axios
-        .patch(
-          `/messages/${id}.json`,
-          JSON.stringify({
-            status: 0
-          })
-        )
-        .then(res => {
-          this.getData();
+    onDelete(id, index) {
+      this.messages.splice(index, 1);
+      this.$axios.patch(
+        `/messages/${id}.json`,
+        JSON.stringify({
+          status: 0
         })
-        .catch(err => console.log(err));
+      );
     },
     scrollToElement() {
       const el = this.$el.getElementsByClassName("bottom")[0];
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
       }
-    }
-  },
-  computed: {
-    logedUser() {
-      return window.localStorage.getItem("loged-id");
     }
   }
 };

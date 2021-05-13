@@ -1,23 +1,25 @@
 <template>
   <div class="app">
-    <NavHead/>
-   <div class="main">
-     <nuxt @closeModal="onClickOutside"/>
-   </div>
+    <NavHead />
+    <div class="main">
+      <nuxt @closeModal="onClickOutside" />
+    </div>
   </div>
 </template>
 <script>
+import NavHead from "~/components/NavHead";
 export default {
-   methods: {
+  components: { NavHead },
+  methods: {
     onClickOutside() {
-      $nuxt.$emit('closeModal')
+      $nuxt.$emit("closeModal");
     }
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>
-.main{
+.main {
   width: 100%;
   height: calc(100vh - 60px);
 }
