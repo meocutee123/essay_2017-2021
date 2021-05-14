@@ -41,12 +41,8 @@
         </div>
       </div>
     </template>
-    <Default v-if="isDefaultView" />
-    <ChatSection
-      ref="chatSection"
-      v-else
-      :sectionData="sectionData"
-    />
+    <Default v-if="!chatSections.length" />
+    <ChatSection v-else ref="chatSection" :sectionData="sectionData" />
     <!-- <Playground @onClickSend="sendMessage" /> -->
   </page-container>
 </template>
@@ -67,9 +63,10 @@ export default {
       loged_id: null
     };
   },
-  mounted() {
-    this.loged_id = window.localStorage.getItem('loged_id')
-    this.getData();
+  async mounted() {
+    this.loged_id = window.localStorage.getItem("loged_id");
+    await this.getData();
+    this.chatSections.length && this.openChatSection(this.chatSections[0].id);
   },
   methods: {
     async getData() {
@@ -90,6 +87,7 @@ export default {
         .get(`/chat-sections/${id}.json`)
         .then(response => {
           this.sectionData = Object.assign({}, response.data, { id: id });
+          this.$refs.chatSection.isActive = false;
           this.$refs.chatSection.getData();
         })
         .catch(err => {

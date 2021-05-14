@@ -19,7 +19,7 @@
       <div class="detail d-flex justify-content-between align-items-center">
         <p>
           <span v-b-modal.paticipants>13 paticipants</span> |
-          <span @click="isActive = !isActive"
+          <span @click="isActive = !isActive; getGallery()"
             ><b-icon icon="journal-album" scale="1rem"></b-icon> Gallery</span
           >
           |
@@ -120,6 +120,44 @@
       </div>
       <div class="images">
         <h4 class="font-weight-bold">Images</h4>
+        <b-row class="p-2" v-if="isLoadingGallery">
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+        </b-row>
         <b-row class="p-2">
           <b-col
             v-for="(src, index) in images"
@@ -131,7 +169,45 @@
           </b-col>
         </b-row>
         <h4 class="font-weight-bold">Files</h4>
-        <b-row class="p-2">
+        <b-row class="p-2" v-if="isLoadingGallery">
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+        </b-row>
+        <b-row v-else class="p-2">
           <b-col cols="6" class="p-2">
             <div><img src="/nayeon.jpg" alt="" /></div>
           </b-col>
@@ -172,12 +248,13 @@ export default {
       sliding: null,
       messages: [],
       images: [],
-      loged_id: null
+      loged_id: null,
+      isLoadingGallery: false
     };
   },
   async mounted() {
-    this.loged_id = window.localStorage.getItem('loged_id')
-    this.getData();
+    this.loged_id = window.localStorage.getItem("loged_id");
+    await this.getData();
     this.scrollToElement();
   },
   methods: {
@@ -188,21 +265,32 @@ export default {
       this.messages.push(params);
       this.scrollToElement();
     },
-    async getData() {
-      const listMessage = [];
+    async getGallery() {
+      this.isLoadingGallery = true;
       const listImages = [];
       await this.$axios.get("messages.json").then(res => {
         for (let index in res.data) {
           let item = res.data[index];
           if (item.chat_section === this.sectionData.id && item.status === 1) {
-            listMessage.push({ id: index, ...item });
             if (Array.isArray(item.message)) {
               listImages.push(...item.message);
             }
           }
         }
-        this.messages = listMessage;
+        this.isLoadingGallery = false;
         this.images = listImages;
+      });
+    },
+    async getData() {
+      const listMessage = [];
+      await this.$axios.get("messages.json").then(res => {
+        for (let index in res.data) {
+          let item = res.data[index];
+          if (item.chat_section === this.sectionData.id && item.status === 1) {
+            listMessage.push({ id: index, ...item });
+          }
+        }
+        this.messages = listMessage;
       });
       this.scrollToElement();
     },

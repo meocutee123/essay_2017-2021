@@ -2,7 +2,7 @@
   <div class="handler d-flex flex-column">
     <h3 class="font-weight-bold">Notifications</h3>
     <div class="d-flex flex-column">
-      <h4 class="font-weight-bold">Today</h4>
+      <h4 v-if="pendingAcept.length" class="font-weight-bold">Today</h4>
       <div v-if="isLoading" class="content d-flex my-3">
         <b-skeleton width="57px" height="50px" type="avatar"></b-skeleton>
         <div style="width: 70%" class="ml-3 mt-1">
@@ -63,7 +63,7 @@
     </div>
 
     <div class="d-flex flex-column">
-      <h4 class="font-weight-bold">Yesterday</h4>
+      <h4 v-if="pendingYesterday.length" class="font-weight-bold">Yesterday</h4>
       <div v-if="isLoading" class="content d-flex my-3">
         <b-skeleton width="57px" height="50px" type="avatar"></b-skeleton>
         <div style="width: 70%" class="ml-3 mt-1">
@@ -98,12 +98,17 @@
               }}</span>
               sent you a friend request.
             </p>
-            <b-button v-b-toggle="`collapse-yd${index}`" class="btn-light-grey">
+            <b-button
+              v-b-toggle="`collapse-yd-${index}`"
+              class="btn-light-grey"
+            >
               <b-icon icon="three-dots"></b-icon>
             </b-button>
           </div>
           <b-collapse :id="`collapse-yd-${index}`" class="collapse-btn mb-2">
-            <button class="mr-3">Accept</button>
+            <button class="mr-3" @click="accept(user, 'yesterday', index)">
+              Accept
+            </button>
             <button>Reject</button>
           </b-collapse>
         </div>
@@ -119,63 +124,61 @@ export default {
       pendingAcept: [],
       loged_id: null,
       isLoading: false,
-      pendingYesterday: []
+      pendingYesterday: [],
+      currentUserRequestId: null,
+      currentUserId: null
     };
   },
   async mounted() {
     this.isLoading = true;
     this.loged_id = window.localStorage.getItem("loged_id");
+    const baseUser = [];
     const users = [];
+
     const request_id = await this.$axios.get(`users.json`).then(response => {
+      let temp;
       for (let i in response.data) {
-        users.push(response.data[i]);
+        if (response.data[i].id !== this.loged_id) {
+          users.push({ ...response.data[i], request_id: i });
+        } else {
+          temp = i;
+          baseUser.push(response.data[i]);
+        }
       }
-      return Object.entries(response.data).filter(
-        item => item[1].id === this.loged_id
-      )[0][0];
+      return temp;
     });
-    await this.$axios
-      .get(`users/${request_id}/requests.json`)
-      .then(({ data }) => {
-        const listId = [];
-        for (let i in data) {
-          if (data[i].status != 1) {
-            listId.push(data[i].request_from);
-          }
-        }
-        const today = [];
-        const yesterday = [];
-        for (const id of listId) {
-          let temp = users.filter(user => user.id === id);
-          let { requests } = { ...temp[0] };
-          for (let i in requests) {
-            if (requests[i].time === new Date().toLocaleDateString("en-GB")) {
-              today.push({ ...temp[0], request_id: request_id });
-            } else {
-              yesterday.push({ ...temp[0], request_id: request_id });
-            }
-          }
-        }
-        this.isLoading = false;
-        this.pendingAcept = today;
-        this.pendingYesterday = yesterday;
-      });
+    this.currentUserRequestId = request_id;
+    this.currentUserId = baseUser[0].id;
+    const today = [];
+    const yesterday = [];
+    for (let index in baseUser[0].requests) {
+      let temp = users.filter(
+        user => user.id === baseUser[0].requests[index].request_from
+      );
+      today.push({ ...temp[0], delete_id: index });
+    }
+
+    this.isLoading = false;
+    this.pendingAcept = today;
+    this.pendingYesterday = yesterday;
     this.isLoading = false;
   },
   methods: {
     async accept(user, from, index) {
+      await this.$axios.post(`users/${user.request_id}/friends.json`, {
+        uid: this.currentUserId
+      });
       await this.$axios
-        .post(`users/${user.request_id}/friends.json`, { uid: user.id })
+        .post(`users/${this.currentUserRequestId}/friends.json`, {
+          uid: user.id
+        })
         .then(res => {
           from === "today" && this.pendingAcept.splice(index, 1);
           from === "yesterday" && this.pendingYesterday.splice(index, 1);
         });
-      let idRequest = Object.keys(user.requests).find(
-        key => user.requests[key].request_from === user.id
+      this.$axios.delete(
+        `users/${this.currentUserRequestId}/requests/${user.delete_id}.json`
       );
-      this.$axios.patch(`users/${user.request_id}/requests/${idRequest}.json`, {
-        status: 1
-      });
     }
   }
 };

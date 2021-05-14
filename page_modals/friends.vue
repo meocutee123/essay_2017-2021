@@ -44,7 +44,7 @@
     <div class="friends">
       <div
         class="friend d-flex p-2"
-        v-for="(person, index) in users"
+        v-for="(person, index) in people"
         :key="index"
       >
         <b-avatar size="4rem" class="mr-3" src="/bae-joohyun.png"></b-avatar>
@@ -86,10 +86,10 @@
         </div>
         <b-icon
           class="mt-1"
-          style="color: #41b883"
-          :icon="'person-plus-fill'"
+          style="color: red"
+          :icon="'person-x-fill'"
           scale="1.5rem"
-          @click="sendRequest(person.request_id)"
+          @click="removeFriend(person.request_id)"
         ></b-icon>
       </div>
     </div>
@@ -105,32 +105,48 @@ export default {
       isRequested: {},
       users: null,
       loged_id: null,
-      isLoading: false
+      isLoading: false,
+      currentUser: []
     };
   },
   async mounted() {
     this.loged_id = window.localStorage.getItem("loged_id");
+    this.isLoading = true
     await this.$axios.get("users.json").then(response => {
       const users = [];
       for (const [key, value] of Object.entries(response.data)) {
-        users.push({ ...value, request_id: key });
+        if (value.id === this.loged_id) {
+          this.currentUser.push({ ...value, request_id: key });
+        } else {
+          users.push({ ...value, request_id: key });
+        }
       }
+      this.isLoading = false
       this.users = users;
     });
-    // this.getFriends();
-    // this.getSuggested();
+    this.getFriends();
+    this.isLoading = false
   },
   methods: {
     getFriends() {
-      this.people = this.users.filter(item =>
-        item.friends.includes(this.loged_id)
+      const listFriendsId = [];
+      this.friends = this.currentUser.filter(
+        item =>
+          item.friends &&
+          Object.entries(item.friends).map(item => {
+            listFriendsId.push(item[1].uid);
+          })
       );
-    },
-    getSuggested() {
-      this.people = this.users.filter(
-        item => !item.friends.includes(this.loged_id)
-      );
-      this.people.length = 4;
+      const listFriends = [];
+      const listSuggested = [];
+      console.log(this.users);
+      this.users.map(item => {
+        listFriendsId.includes(item.id)
+          ? listFriends.push(item)
+          : listSuggested.push(item);
+      });
+      this.friends = listFriends;
+      this.people = listSuggested;
     },
     async sendRequest(request_id, index) {
       await this.$axios
@@ -141,7 +157,8 @@ export default {
           time: new Date().toLocaleDateString("en-GB")
         })
         .then(res => {});
-    }
+    },
+    removeFriend() {}
   }
 };
 </script>

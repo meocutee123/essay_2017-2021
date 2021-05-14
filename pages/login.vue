@@ -107,14 +107,16 @@ export default {
         (this.isSignUp = false);
     },
     async onSubmit() {
-      await this.$store
-            .dispatch("onSubmit", { ...this.form, vm: this }).then(res => {
-              res === true && this.$router.push('/')
-            })
+      this.isSignUp
+        ? this.doSignUp()
+        : await this.$store
+            .dispatch("onSubmit", { ...this.form, vm: this })
+            .then(res => {
+              res === true && this.$router.push("/");
+            });
     },
     async doSignUp() {
-      await this.$store.dispatch('onCreateUser', {...this.form, vm: this})
-      
+      await this.$store.dispatch("onCreateUser", { ...this.form, vm: this });
     }
   }
 };

@@ -36,7 +36,7 @@
             size="2rem"
             src="https://placekitten.com/300/300"
           ></b-avatar
-          ><span>Nguyen</span>
+          ><span>{{ loged_user[0] && loged_user[0].name.firstName }}</span>
         </div>
         <b-button
           pill
@@ -90,7 +90,9 @@ export default {
   data() {
     return {
       isActive: false,
-      isComponent: "", loged_id: null
+      isComponent: "",
+      loged_id: null,
+      loged_user: [],
     };
   },
   components: {
@@ -104,17 +106,18 @@ export default {
       this.$modal.close({ name: "modal" });
     });
   },
-  mounted() {
-    this.loged_id = window.localStorage.getItem('loged_id')
-    this.getLogedUser();
+ async mounted() {
+    this.loged_id = window.localStorage.getItem("loged_id");
+    await this.getLogedUser();
   },
   methods: {
     async getLogedUser() {
       await this.$axios.get(`users.json`).then(({ data }) => {
-        for (let index in data) {
-          data[index].id === this.loged_id &&
-            this.$axios.get(`users/${index}.json`).then();
-        }
+        Object.entries(data).forEach(user => {
+          if (user[1].id === this.loged_id) {
+            this.loged_user.push(user[1]);
+          }
+        });
       });
     },
     openModal(name) {
@@ -124,7 +127,7 @@ export default {
     closeModal() {
       this.$modal.close({ name: "modal" });
     }
-  },
+  }
 };
 </script>
 
