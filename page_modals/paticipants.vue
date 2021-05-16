@@ -3,14 +3,60 @@
     <span class="floating-btn">ADD</span>
     <h3>Paticipants</h3>
     <div class="d-flex flex-column">
-      <div class="people p-3 d-flex flex-column">
+      <div v-if="isLoading" class="people p-3 d-flex flex-column">
         <div class="person d-flex">
+          <b-skeleton width="70px" height="70px" type="avatar"></b-skeleton>
+          <div class="d-flex flex-column p-2">
+            <h5>
+              <b-skeleton animation="wave" width="200px"></b-skeleton>
+            </h5>
+            <span><b-skeleton animation="wave" width="20%"></b-skeleton></span>
+          </div>
+        </div>
+      </div>
+      <div v-if="isLoading" class="people p-3 d-flex flex-column">
+        <div class="person d-flex">
+          <b-skeleton width="70px" height="70px" type="avatar"></b-skeleton>
+          <div class="d-flex flex-column p-2">
+            <h5>
+              <b-skeleton animation="wave" width="200px"></b-skeleton>
+            </h5>
+            <span><b-skeleton animation="wave" width="20%"></b-skeleton></span>
+          </div>
+        </div>
+      </div>
+      <div v-if="isLoading" class="people p-3 d-flex flex-column">
+        <div class="person d-flex">
+          <b-skeleton width="70px" height="70px" type="avatar"></b-skeleton>
+          <div class="d-flex flex-column p-2">
+            <h5>
+              <b-skeleton animation="wave" width="200px"></b-skeleton>
+            </h5>
+            <span><b-skeleton animation="wave" width="20%"></b-skeleton></span>
+          </div>
+        </div>
+      </div>
+      <div class="people p-3 d-flex flex-column">
+        <div
+          class="person d-flex"
+          v-for="(participant, index) in participants"
+          :key="index"
+        >
           <b-avatar class="mr-2" src="/wendy.jpg" size="4rem"></b-avatar>
           <div class="d-flex flex-column p-2">
-            <h5 class="font-weight-bold">Son Seungwan</h5>
-            <span>Add by you</span>
+            <h5 class="font-weight-bold">
+              {{ `${participant.name.firstName} ${participant.name.lastName}` }}
+            </h5>
+            <span>{{
+              participant.id !== loged_id ? "Someone's wife" : "You"
+            }}</span>
           </div>
-          <b-icon icon="x" scale="2.3rem"></b-icon>
+          <b-icon
+            v-if="participant.id !== loged_id"
+            icon="x"
+            scale="2.3rem"
+            @click="removePaticipant(participant.request_id, index)"
+          ></b-icon>
         </div>
       </div>
       <div class="outnumber"></div>
@@ -23,30 +69,66 @@ export default {
   props: ["sectionID"],
   data() {
     return {
-      paticipants: [],
-      listUsers: ""
+      participants: [],
+      listUsers: "",
+      outnumbers: [],
+      loged_id: null,
+      isLoading: false
     };
   },
   async mounted() {
+    this.isLoading = true;
+    this.loged_id = window.localStorage.getItem("loged_id");
     await this.$axios
       .get(`chat-sections/${this.sectionID}.json`)
       .then(response => {
         this.listUsers = response.data.users;
       });
-    this.getParticipants();
+    await this.getParticipants();
+    this.isLoading = false;
   },
   methods: {
-    async getParticipants() {
-      const list = this.listUsers.split(",")
-      for (let item in list) {
-        await this.$axios.get(`users/${list[item]}.json`).then((res) => {
-          console.log(res);
-          // for (let i in data) {
-          //   this.paticipants.push({ ...data[i], id: i });
-          // }
+    async removePaticipant(index) {
+      this.$swal
+        .fire({
+          icon: "warning",
+          titleText: "Are you sure?",
+          timer: "5000",
+          allowOutsideClick: true,
+          allowEscapeKey: true,
+          showConfirmButton: true,
+          confirmButtonColor: "#41b883",
+          showCancelButton: true
+        })
+        .then(res => {
+          if (res.isConfirmed) {
+            this.participants.splice(index, 1);
+            const users = [];
+            this.participants.forEach(user => users.push(user.id));
+            this.$axios
+              .patch(
+                `/chat-sections/${this.sectionID}.json`,
+                JSON.stringify({
+                  users: users.join(",")
+                })
+              )
+              .then(res => console.log(res));
+          }
         });
-      }
-      console.log(this.paticipants);
+    },
+    async getParticipants() {
+      const participants = [];
+      const listId = this.listUsers.split(",");
+      await this.$axios.get(`users/.json`).then(res => {
+        for (let [, value] of Object.entries(res.data)) {
+          if (listId.includes(value.id)) {
+            participants.push({ ...value });
+          } else {
+            this.outnumbers.push(value);
+          }
+        }
+      });
+      this.participants = participants;
     }
   }
 };

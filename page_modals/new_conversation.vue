@@ -4,31 +4,104 @@
       <h3>New conversation</h3>
     </div>
     <div class="body">
-      <div class="d-flex search-area">
-        <span>To: </span>
-        <b-form-input
-          class="search-people ml-3 w-100 p-1"
-          type="text"
-          debounce="500"
-          list="people"
-          @change="onChange($event)"
-        ></b-form-input>
-        <datalist id="people">
-          <option v-for="(people, index) in names" :key="index">{{
-            people
-          }}</option>
-        </datalist>
-      </div>
-      <div class="selected mb-1">
-        <span class="mr-1" v-for="(value, index) in values" :key="index"
-          >{{ value
-          }}<b-icon icon="x" scale="1.5rem" @click="onDelete(index)"></b-icon
-        ></span>
-      </div>
-      <div class="chat-area">
-        <!-- <ChatSection :isNew="true" /> -->
-        <Playground @sent="newConversation" />
-      </div>
+      <h6>Suggested</h6>
+      <b-row>
+        <b-col v-if="isLoading" cols="6" class="d-flex">
+          <b-skeleton width="50px" height="50px" type="avatar"></b-skeleton>
+          <div class="d-flex flex-column my-2 ml-2">
+            <b-skeleton
+              animation="wave"
+              height="1rem"
+              width="1 50px"
+            ></b-skeleton>
+            <b-skeleton
+              animation="wave"
+              height="1rem"
+              width="150px"
+            ></b-skeleton>
+          </div>
+        </b-col>
+        <b-col v-if="isLoading" cols="6" class="d-flex">
+          <b-skeleton width="50px" height="50px" type="avatar"></b-skeleton>
+          <div class="d-flex flex-column my-2 ml-2">
+            <b-skeleton
+              animation="wave"
+              height="1rem"
+              width="1 50px"
+            ></b-skeleton>
+            <b-skeleton
+              animation="wave"
+              height="1rem"
+              width="150px"
+            ></b-skeleton>
+          </div>
+        </b-col>
+        <b-col v-if="isLoading" cols="6" class="d-flex">
+          <b-skeleton width="50px" height="50px" type="avatar"></b-skeleton>
+          <div class="d-flex flex-column my-2 ml-2">
+            <b-skeleton
+              animation="wave"
+              height="1rem"
+              width="1 50px"
+            ></b-skeleton>
+            <b-skeleton
+              animation="wave"
+              height="1rem"
+              width="150px"
+            ></b-skeleton>
+          </div>
+        </b-col>
+        <b-col v-if="isLoading" cols="6" class="d-flex">
+          <b-skeleton width="50px" height="50px" type="avatar"></b-skeleton>
+          <div class="d-flex flex-column my-2 ml-2">
+            <b-skeleton
+              animation="wave"
+              height="1rem"
+              width="1 50px"
+            ></b-skeleton>
+            <b-skeleton
+              animation="wave"
+              height="1rem"
+              width="150px"
+            ></b-skeleton>
+          </div>
+        </b-col>
+        <b-col
+          class="user"
+          cols="6"
+          v-for="(friend, index) in friends"
+          :key="index"
+        >
+          <div
+            :id="`user-${index}`"
+            @click="onSelected(index, friend)"
+            :class="['d-flex align-items-center']"
+          >
+            <b-img
+              rounded="circle"
+              src="https://picsum.photos/50/50/?image=41"
+              fluid
+              alt=""
+            />
+            <h5 class="font-weight-bold ml-2">
+              {{ `${friend.name.firstName} ${friend.name.lastName}` }}
+            </h5>
+          </div>
+        </b-col>
+        <b-col
+          cols="12"
+          class="d-flex justify-content-center align-items-center mt-2"
+          ><b-button v-if="!isDisabled" variant="success" @click="close()"
+            >Continute
+          </b-button>
+          <b-icon
+            v-else
+            icon="arrow-clockwise"
+            animation="spin"
+            font-scale="2"
+          ></b-icon>
+        </b-col>
+      </b-row>
     </div>
   </div>
 </template>
@@ -38,58 +111,92 @@ export default {
   data() {
     return {
       values: [],
-      users: [],
+      friends: [],
       names: [],
-      listUsers: [],
-      loged_id: null
+      loged_id: null,
+      isSelected: true,
+      listId: [],
+      chatSection: [],
+      isLoading: false,
+      isDisabled: false
     };
   },
   mounted() {
     this.loged_id = window.localStorage.getItem("loged_id");
+    this.listId.push(this.loged_id);
     this.getUsers();
-    this.listUsers.push(this.loged_id);
   },
   methods: {
-    async getUsers() {
-      await this.$axios.get("/users.json").then(response => {
-        for (let index in response.data) {
-          if (response.data[index].id === this.loged_id)
-            continue;
-          let { name } = response.data[index];
-          this.names.push(`${name.firstName} ${name.lastName}`);
-          this.users.push({
-            ...response.data[index],
-            name: `${name.firstName} ${name.lastName}`
-          });
-        }
-      });
-    },
-    onChange(e) {
-      this.values.push(e);
-      this.listUsers.push(this.users.find(item => item.name === e).id);
-    },
-    onDelete(index) {
-      this.values.splice(index, 1);
-      this.listUsers.splice(index + 1, 1);
-    },
-    async newConversation(content) {
-      if (this.listUsers.length === 1) return;
-      await this.$axios
-        .post(
-          "/chat-sections.json",
-          JSON.stringify({
-            users: this.listUsers.join(","),
-            name: this.values.join(", ")
-          })
-        )
-        .then(response => {
-          console.log(response);
-          this.$axios
-            .patch(`messages/${content.id}.json`, {
-              chat_section: response.data.name
-            })
-            .catch(err => console.log(err));
+    async newGroup() {},
+    async onSelected(index, friend) {
+      this.chatSection = []
+      const el = document.querySelector(`#user-${index}`);
+      const arrIndex = this.listId.findIndex(item => item === friend.id);
+      if (el.classList.length == 2) {
+        if (arrIndex === -1)
+          this.listId.push(friend.id), this.names.push(friend.name.firstName);
+        el.classList.add("selected");
+        await this.$axios.get("chat-sections.json").then(({ data }) => {
+          if (data !== null) {
+            for (let [key, value] of Object.entries(data)) {
+              const sections = value.users.split(",");
+              let difference = sections
+                .filter(x => !this.listId.includes(x))
+                .concat(this.listId.filter(x => !sections.includes(x)));
+              if (difference.length === 0) {
+                this.chatSection.push({ ...value, request_id: key });
+                break;
+              }
+            }
+          }
         });
+      } else {
+        el.classList.remove("selected");
+        if (index !== -1) {
+          this.listId.splice(arrIndex, 1);
+          this.names.splice(
+            this.names.findIndex(name => name === friend.name.firstName),
+            1
+          );
+        }
+      }
+    },
+    async getUsers() {
+      this.isLoading = true;
+      await this.$axios.get("users.json").then(response => {
+        const users = [];
+        for (let [key, value] of Object.entries(response.data)) {
+          if (value.id !== this.loged_id) {
+            users.push({ ...value, request_id: key });
+          }
+        }
+        this.isLoading = false;
+        this.friends = users;
+      });
+      this.isLoading = false;
+    },
+    async newConversation() {
+      return await this.$axios.post(
+        "/chat-sections.json",
+        JSON.stringify({
+          users: this.listId.join(","),
+          name: this.names.join(",")
+        })
+      );
+    },
+    async close() {
+      this.isDisabled = true;
+      if (this.chatSection.length) {
+        this.$emit("onCreate", this.chatSection);
+        this.$bvModal.hide("newConversation");
+        return;
+      }
+      await this.newConversation().then(response => {
+        this.chatSection.push({request_id: response.data.name})
+        this.$emit("onCreate", this.chatSection);
+      });
+      this.$bvModal.hide("newConversation");
+      this.isDisabled = false;
     }
   }
 };
@@ -99,41 +206,46 @@ export default {
 h3 {
   font-weight: bolder;
 }
-.search-area {
-  border-bottom: 1px solid #e4e6eb;
-  span {
-    font-size: 0.9rem;
-  }
-  .search-people {
-    height: 1.1rem;
-    outline: none;
-    box-shadow: none;
-    border: none;
+.user {
+  border-radius: 1rem;
+
+  box-sizing: border-box;
+  div {
+    padding: 0.5rem;
+    width: 100%;
+    background: rgb(245, 245, 245);
+    border-radius: 1rem;
+    height: 65px;
+    cursor: pointer;
+    h5 {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
 }
 .selected {
-  padding-top: 2px;
-  span {
-    position: relative;
-    display: inline-block;
-    padding: 0.1rem 0.5rem;
-    border: 1px solid #e4e6eb;
-    border-radius: 3px;
-    transition: 0.2s;
-    &:hover {
-      cursor: pointer;
-      background-color: rgb(247, 208, 255);
-    }
-    b-icon {
-      position: absolute;
-      top: 0;
-      right: 0;
-    }
-  }
+  background-color: #8bdfb9 !important;
 }
-.chat-area {
-  width: 100%;
-  height: 40vh;
+.speech-bubble {
   position: relative;
+  background: #329a4c;
+  border-radius: 1rem;
+  max-width: 200px;
+  padding: 0.5rem;
+}
+
+.speech-bubble:after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border: 0.063em solid transparent;
+  border-left-color: #329a4c;
+  border-right: 0;
+  border-bottom: 0;
+  margin-top: -0.031em;
+  margin-right: -0.062em;
 }
 </style>

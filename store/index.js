@@ -16,9 +16,9 @@ export const actions = {
       .signInWithEmailAndPassword(email, password)
       .then(response => {
         commit("setAuthorize", response.user);
-        return true
+        return true;
       })
-      .catch((err) => {
+      .catch(err => {
         vm.$root.$bvToast.toast("Username or password is incorrect!", {
           title: "Error!",
           variant: "danger",
@@ -27,38 +27,51 @@ export const actions = {
       });
   },
   async onCreateUser({ commit }, { email, password, name, vm }) {
-    await firebase
-      .auth()
-      .createUserWithEmailAndPassword(email, password)
-      .then(response => {
-        vm.$bvToast.toast("Account created successfully!", {
-          title: "Success",
-          variant: "success",
-          solid: true
+    const { value: accept } = await vm.$swal.fire({
+      title: "Terms and conditions",
+      input: "checkbox",
+      inputValue: 1,
+      inputPlaceholder: "I agree with the terms and conditions",
+      confirmButtonText: 'Continue&nbsp;<i class="fa fa-arrow-right"></i>',
+      inputValidator: result => {
+        return !result && "You need to agree with T&C";
+      }
+    });
+
+    if (accept) {
+      await firebase
+        .auth()
+        .createUserWithEmailAndPassword(email, password)
+        .then(response => {
+          vm.$bvToast.toast("Account created successfully!", {
+            title: "Success",
+            variant: "success",
+            solid: true
+          });
+          this.$axios.post("users.json", {
+            email: email,
+            password: password,
+            id: response.user.uid,
+            name: {
+              firstName: name.firstName,
+              lastName: name.lastName
+            }
+          });
+          return true;
+        })
+        .catch(err => {
+          this.$bvToast.toast(err.message, {
+            title: "Error",
+            variant: "danger",
+            solid: true
+          });
         });
-        this.$axios.post("users.json", {
-          email: email,
-          password: password,
-          id: response.user.uid,
-          name: {
-            firstName: name.firstName,
-            lastName: name.lastName
-          }
-        });
-        return true;
-      })
-      .catch(err => {
-        this.$bvToast.toast(err.message, {
-          title: "Error",
-          variant: "danger",
-          solid: true
-        });
-      });
+    }
   }
 };
 export const mutations = {
   setAuthorize(state, payload) {
     state.loged_infor = true;
-    window.localStorage.setItem('loged_id', payload.uid)
+    window.localStorage.setItem("loged_id", payload.uid);
   }
 };

@@ -3,6 +3,7 @@
     <div class="chat-app d-flex">
       <div class="side-bar d-flex flex-column">
         <slot name="sidebar"></slot>
+        <slot name="friends"></slot>
       </div>
       <div class="chat-area">
         <slot />

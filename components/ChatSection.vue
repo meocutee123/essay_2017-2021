@@ -19,11 +19,17 @@
       <div class="detail d-flex justify-content-between align-items-center">
         <p>
           <span v-b-modal.paticipants>13 paticipants</span> |
-          <span @click="isActive = !isActive; getGallery()"
+          <span
+            @click="
+              isActive = !isActive;
+              getGallery();
+            "
             ><b-icon icon="journal-album" scale="1rem"></b-icon> Gallery</span
           >
           |
-          <span><b-icon icon="search" scale="1rem"></b-icon> Find</span>
+          <span @click="onSearch()"
+            ><b-icon icon="search" scale="1rem"></b-icon> Find</span
+          >
         </p>
         <b-modal id="paticipants" scrollable hide-footer hide-header>
           <paticipants :sectionID="sectionData.id" />
@@ -32,13 +38,57 @@
     </div>
     <div :class="['blink d-flex flex-column', { blinkActive: isActive }]">
       <div class="chat-section mt-auto px-3">
-        <div class="greetings text-center p-2">
+        <div
+          v-if="isLoadingConversation"
+          class="greetings d-flex flex-column align-items-center p-2"
+        >
+          <b-skeleton width="100px" height="100px" type="avatar"></b-skeleton>
+          <h3 class="mt-2">
+            <b-skeleton
+              height="1.7rem"
+              animation="wave"
+              width="230px"
+            ></b-skeleton>
+          </h3>
+          <span><b-skeleton animation="wave" width="300px"></b-skeleton></span>
+        </div>
+        <div v-else class="greetings text-center p-2">
           <b-avatar
             src="https://placekitten.com/300/300"
             size="6rem"
           ></b-avatar>
           <h3>Nguyễn Tuấn Nghĩa</h3>
           <span>Now you can start conversation together</span>
+        </div>
+        <div
+          v-if="isLoadingConversation"
+          class="
+              conversations d-flex align-items-end ml-auto flex-column p-2 
+            "
+        >
+          <b-skeleton animation="wave" width="85%"></b-skeleton>
+          <b-skeleton animation="wave" width="55%"></b-skeleton>
+          <b-skeleton animation="wave" width="70%"></b-skeleton>
+        </div>
+        <div
+          v-if="isLoadingConversation"
+          class="
+              conversations d-flex align-items-start flex-column p-2 
+            "
+        >
+          <b-skeleton animation="wave" width="85%"></b-skeleton>
+          <b-skeleton animation="wave" width="55%"></b-skeleton>
+          <b-skeleton animation="wave" width="70%"></b-skeleton>
+          <b-skeleton animation="wave" width="30%"></b-skeleton>
+          <b-skeleton animation="wave" width="70%"></b-skeleton>
+        </div>
+        <div
+          v-if="isLoadingConversation"
+          class="
+              conversations d-flex align-items-end ml-auto flex-column p-2 
+            "
+        >
+          <b-skeleton animation="wave" width="25%"></b-skeleton>
         </div>
         <template v-for="(content, index) in messages">
           <div
@@ -249,13 +299,12 @@ export default {
       messages: [],
       images: [],
       loged_id: null,
-      isLoadingGallery: false
+      isLoadingGallery: false,
+      isLoadingConversation: false
     };
   },
   async mounted() {
     this.loged_id = window.localStorage.getItem("loged_id");
-    await this.getData();
-    this.scrollToElement();
   },
   methods: {
     onClickOutside() {
@@ -264,6 +313,23 @@ export default {
     loadOnSent(params) {
       this.messages.push(params);
       this.scrollToElement();
+    },
+    async onSearch() {
+      const { value } = await this.$swal.fire({
+        title: "Enter search term",
+        input: "text",
+        showCancelButton: true,
+        confirmButtonColor: "#41b883",
+        inputValidator: value => {
+          if (!value) {
+            return "You need to write something!";
+          }
+        }
+      });
+
+      if (value) {
+        this.$swal.fire(`You entered ${value}`);
+      }
     },
     async getGallery() {
       this.isLoadingGallery = true;
@@ -282,6 +348,7 @@ export default {
       });
     },
     async getData() {
+      this.isLoadingConversation = true;
       const listMessage = [];
       await this.$axios.get("messages.json").then(res => {
         for (let index in res.data) {
@@ -290,8 +357,10 @@ export default {
             listMessage.push({ id: index, ...item });
           }
         }
+        this.isLoadingConversation = false;
         this.messages = listMessage;
       });
+      this.isLoadingConversation = false;
       this.scrollToElement();
     },
     onDelete(id, index) {
