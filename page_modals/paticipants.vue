@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex paticipants flex-column">
-    <span class="floating-btn">ADD</span>
+    <span class="floating-btn"><b-icon icon="x" scale="2rem"></b-icon></span>
     <h3>Paticipants</h3>
     <div class="d-flex flex-column">
       <div v-if="isLoading" class="people p-3 d-flex flex-column">
@@ -48,11 +48,11 @@
               {{ `${participant.name.firstName} ${participant.name.lastName}` }}
             </h5>
             <span>{{
-              participant.id !== loged_id ? "Someone's wife" : "You"
+              participant.id !== logged_id ? "Someone's wife" : "You"
             }}</span>
           </div>
           <b-icon
-            v-if="participant.id !== loged_id"
+            v-if="participant.id !== logged_id"
             icon="x"
             scale="2.3rem"
             @click="removePaticipant(participant.request_id, index)"
@@ -72,15 +72,15 @@ export default {
       participants: [],
       listUsers: "",
       outnumbers: [],
-      loged_id: null,
+      logged_id: null,
       isLoading: false
     };
   },
   async mounted() {
     this.isLoading = true;
-    this.loged_id = window.localStorage.getItem("loged_id");
+    this.logged_id = window.localStorage.getItem("logged_id");
     await this.$axios
-      .get(`chat-sections/${this.sectionID}.json`)
+      .get(`chat-sections/${this.sectionID}.json`, { progress: false })
       .then(response => {
         this.listUsers = response.data.users;
       });
@@ -119,7 +119,7 @@ export default {
     async getParticipants() {
       const participants = [];
       const listId = this.listUsers.split(",");
-      await this.$axios.get(`users/.json`).then(res => {
+      await this.$axios.get(`users/.json`, { progress: false }).then(res => {
         for (let [, value] of Object.entries(res.data)) {
           if (listId.includes(value.id)) {
             participants.push({ ...value });

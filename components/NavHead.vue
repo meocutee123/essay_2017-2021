@@ -1,7 +1,7 @@
 <template>
   <div class="sticky-top">
     <b-navbar
-      class="header border-bottom"
+      class="header border-bottom d-flex justify-content-between"
       toggleable="lg"
       type="dark"
       variant="light"
@@ -16,27 +16,29 @@
           <span class="h2" style="color: black; font-weight: bold">TREND</span>
         </div>
       </b-navbar-brand>
-      <div class="search ml-auto d-flex">
-        <b-input-group>
-          <b-form-input placeholder="Type to search for chat"></b-form-input>
+      <div class="search d-flex">
+        <b-input-group style="position: relative">
+          <b-form-input
+            id="search"
+            placeholder="Type to search for chat"
+          ></b-form-input>
         </b-input-group>
+        <div
+          style="position: absolute; color: #273849; background: #06d6a0; top: 3.3rem; width: 200px; border-radius: .5rem"
+          id="htmlOut"
+        ></div>
         <div class="hamburger ml-3" @click="isActive = !isActive">
           <b-icon icon="list" scale="1.5rem"></b-icon>
         </div>
       </div>
-      <div
-        :class="[
-          { active: isActive },
-          'home ml-auto d-flex align-items-center'
-        ]"
-      >
+      <div :class="[{ active: isActive }, 'home d-flex align-items-center']">
         <div @click="openModal('profile')" class="profile">
           <b-avatar
             variant="danger"
             size="2rem"
             src="https://placekitten.com/300/300"
           ></b-avatar
-          ><span>{{ loged_user[0] && loged_user[0].name.firstName }}</span>
+          ><span>{{ logged_user[0] && logged_user[0].name.firstName }}</span>
         </div>
         <b-button
           pill
@@ -91,8 +93,8 @@ export default {
     return {
       isActive: false,
       isComponent: "",
-      loged_id: null,
-      loged_user: [],
+      logged_id: null,
+      logged_user: []
     };
   },
   components: {
@@ -106,16 +108,60 @@ export default {
       this.$modal.close({ name: "modal" });
     });
   },
- async mounted() {
-    this.loged_id = window.localStorage.getItem("loged_id");
-    await this.getLogedUser();
+  async mounted() {
+    this.logged_id = window.localStorage.getItem("logged_id");
+    await this.getloggedUser();
+    const search = this.$el.querySelector("#search");
+    search.addEventListener("input", () => this.search(search.value));
   },
   methods: {
-    async getLogedUser() {
+    async search(searchText) {
+      await this.$axios
+        .get("chat-sections.json", { progress: false })
+        .then(({ data }) => {
+          let section = [];
+          for (let key in data) {
+            section.push({ ...data[key], request_id: key });
+          }
+          let matches = section.filter(item => {
+            const regex = new RegExp(`^${searchText}`, "gi");
+            return item.name.match(regex);
+          });
+          if (searchText.length === 0) {
+            matches = [];
+            this.$el.querySelector("#htmlOut").innerHTML = "";
+          }
+          this.outputHTML(matches);
+        });
+    },
+    outputHTML(matches) {
+      if (matches.length > 0) {
+        const html = matches
+          .map(
+            item => ` <div class="f-flex flex-column p-2" data-value="${item.request_id}">
+          <div style="border-bottom: 1px solid #f8f9fa; padding: 0 5px; cursor: pointer ">${item.name}</div>
+          </div>
+        
+        `
+          )
+          .join("");
+        this.$el.querySelector("#htmlOut").innerHTML = html;
+        this.$el.querySelectorAll("#htmlOut > div").forEach(item => {
+          item.addEventListener("click", () => {
+            this.handler(item.getAttribute("data-value"));
+          });
+        });
+      }
+    },
+    handler(payload) {
+      $nuxt.$emit("loadOnSearch", payload);
+      this.$el.querySelector('#htmlOut').innerHTML = ''
+    },
+    async getloggedUser() {
       await this.$axios.get(`users.json`).then(({ data }) => {
         Object.entries(data).forEach(user => {
-          if (user[1].id === this.loged_id) {
-            this.loged_user.push(user[1]);
+          if (user[1].id === this.logged_id) {
+            this.logged_user.push(user[1]);
           }
         });
       });

@@ -104,18 +104,18 @@ export default {
       people: [],
       isRequested: {},
       users: null,
-      loged_id: null,
+      logged_id: null,
       isLoading: false,
       currentUser: []
     };
   },
   async mounted() {
-    this.loged_id = window.localStorage.getItem("loged_id");
+    this.logged_id = window.localStorage.getItem("logged_id");
     this.isLoading = true
-    await this.$axios.get("users.json").then(response => {
+    await this.$axios.get("users.json", { progress: false }).then(response => {
       const users = [];
       for (const [key, value] of Object.entries(response.data)) {
-        if (value.id === this.loged_id) {
+        if (value.id === this.logged_id) {
           this.currentUser.push({ ...value, request_id: key });
         } else {
           users.push({ ...value, request_id: key });
@@ -151,7 +151,7 @@ export default {
     async sendRequest(request_id, index) {
       await this.$axios
         .post(`users/${request_id}/requests.json`, {
-          request_from: this.loged_id,
+          request_from: this.logged_id,
           type: "create",
           status: 0,
           time: new Date().toLocaleDateString("en-GB")

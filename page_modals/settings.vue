@@ -1,6 +1,9 @@
 <template>
   <div class="settings">
-    <div class="power d-flex justify-content-center align-items-center" @click="signOut()">
+    <div
+      class="power d-flex justify-content-center align-items-center"
+      @click="signOut()"
+    >
       <b-icon icon="power" scale="10rem" color="#d8dbe0"></b-icon>
     </div>
     <p>Sign out</p>
@@ -9,11 +12,31 @@
 
 <script>
 export default {
-  methods:{
-    signOut(){
-      localStorage.removeItem('token')
-      localStorage.removeItem('loged-id')
-      this.$router.push('/login')
+  data() {
+    return {
+      users: [],
+      id: null
+    };
+  },
+  mounted() {
+    this.$axios.get("login-users.json", { progress: false }).then(({ data }) => {
+      for (let [key, value] of Object.entries(data)) {
+        this.users.push({ ...value, request_id: key });
+      }
+    });
+    this.id = window.localStorage.getItem("logged_id");
+  },
+  methods: {
+    signOut() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("logged_id");
+      this.$router.push("/login");
+      console.log(this.users.filter(item => item.user === this.id).request_id);
+      this.$axios.delete(
+        `login-users/${
+          this.users.filter(item => item.user === this.id).request_id
+        }.json`
+      );
     }
   }
 };

@@ -18,7 +18,7 @@
       </div>
       <div class="detail d-flex justify-content-between align-items-center">
         <p>
-          <span v-b-modal.paticipants>13 paticipants</span> |
+          <span v-b-modal.paticipants>{{getParticipants + ' participants'}}</span> |
           <span
             @click="
               isActive = !isActive;
@@ -57,7 +57,7 @@
             src="https://placekitten.com/300/300"
             size="6rem"
           ></b-avatar>
-          <h3>Nguyễn Tuấn Nghĩa</h3>
+          <h3>{{sectionData.name}}</h3>
           <span>Now you can start conversation together</span>
         </div>
         <div
@@ -95,7 +95,7 @@
             :key="index"
             :class="
               `conversations d-flex align-items-${
-                content.user === loged_id ? 'end ml-auto' : 'start'
+                content.user === logged_id ? 'end ml-auto' : 'start'
               } flex-column p-2 `
             "
           >
@@ -103,7 +103,7 @@
               <div
                 class="message"
                 :style="
-                  content.user === loged_id
+                  content.user === logged_id
                     ? { 'background-color': '#41b883' }
                     : { 'background-color': '#fcbf49' }
                 "
@@ -131,17 +131,17 @@
               <div
                 class="actions"
                 :style="
-                  content.user === loged_id
+                  content.user === logged_id
                     ? { left: '-20px' }
                     : { right: '-50px' }
                 "
               >
                 <b-icon
-                  v-if="content.user === loged_id"
+                  v-if="content.user === logged_id"
                   icon="three-dots"
                 ></b-icon>
                 <div
-                  v-if="content.user === loged_id"
+                  v-if="content.user === logged_id"
                   class="action d-flex flex-column"
                 >
                   <span @click="onDelete(content.id, index)">Delete</span>
@@ -150,7 +150,7 @@
             </div>
             <b-avatar
               v-if="content.status === 1"
-              :class="`${content.user === loged_id} ? 'to' : 'from'`"
+              :class="`${content.user === logged_id} ? 'to' : 'from'`"
               size="1rem"
             ></b-avatar>
           </div>
@@ -257,8 +257,8 @@
             </div>
           </b-col>
         </b-row>
-        <b-row v-else class="p-2">
-          <b-col cols="6" class="p-2">
+        <b-row class="p-2">
+          <!-- <b-col cols="6" class="p-2">
             <div><img src="/nayeon.jpg" alt="" /></div>
           </b-col>
           <b-col cols="6" class="p-2">
@@ -272,7 +272,7 @@
           </b-col>
           <b-col cols="6" class="p-2">
             <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
+          </b-col> -->
         </b-row>
       </div>
     </div>
@@ -282,6 +282,7 @@
 
 <script>
 import paticipants from "../page_modals/paticipants.vue";
+
 export default {
   components: { paticipants },
   props: {
@@ -298,13 +299,13 @@ export default {
       sliding: null,
       messages: [],
       images: [],
-      loged_id: null,
+      logged_id: null,
       isLoadingGallery: false,
       isLoadingConversation: false
     };
   },
   async mounted() {
-    this.loged_id = window.localStorage.getItem("loged_id");
+    this.logged_id = window.localStorage.getItem("logged_id");
   },
   methods: {
     onClickOutside() {
@@ -312,7 +313,7 @@ export default {
     },
     loadOnSent(params) {
       this.messages.push(params);
-      this.scrollToElement();
+      setTimeout(()=>{this.scrollToElement()}, 400)
     },
     async onSearch() {
       const { value } = await this.$swal.fire({
@@ -334,7 +335,7 @@ export default {
     async getGallery() {
       this.isLoadingGallery = true;
       const listImages = [];
-      await this.$axios.get("messages.json").then(res => {
+      await this.$axios.get("messages.json", { progress: false }).then(res => {
         for (let index in res.data) {
           let item = res.data[index];
           if (item.chat_section === this.sectionData.id && item.status === 1) {
@@ -348,9 +349,10 @@ export default {
       });
     },
     async getData() {
+      this.messages = []
       this.isLoadingConversation = true;
       const listMessage = [];
-      await this.$axios.get("messages.json").then(res => {
+      await this.$axios.get("messages.json", { progress: false }).then(res => {
         for (let index in res.data) {
           let item = res.data[index];
           if (item.chat_section === this.sectionData.id && item.status === 1) {
@@ -365,18 +367,23 @@ export default {
     },
     onDelete(id, index) {
       this.messages.splice(index, 1);
-      this.$axios.patch(
-        `/messages/${id}.json`,
-        JSON.stringify({
-          status: 0
-        })
-      );
+      this.$axios.patch(`/messages/${id}.json`, {
+        status: 0
+      });
     },
     scrollToElement() {
       const el = this.$el.getElementsByClassName("bottom")[0];
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
       }
+    }
+  },
+  computed:{
+    getParticipants(){
+      if(this.sectionData.users){
+        return this.sectionData.users.split(",").length
+      }
+      return 1
     }
   }
 };

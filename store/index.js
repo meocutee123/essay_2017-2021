@@ -1,14 +1,15 @@
 import firebase from "firebase/app";
 import "firebase/auth";
 export const state = () => ({
-  loged_infor: {
-    state: false,
-    loged_id: null
-  },
+  logged_infor: null,
   messages: [],
   chatSections: []
 });
-export const getters = {};
+export const getters = {
+  isAuthenticated(state) {
+    return localStorage.getItem("logged_id");
+  }
+};
 export const actions = {
   async onSubmit({ commit }, { email, password, vm }) {
     return await firebase
@@ -16,7 +17,7 @@ export const actions = {
       .signInWithEmailAndPassword(email, password)
       .then(response => {
         commit("setAuthorize", response.user);
-        return true;
+        return response;
       })
       .catch(err => {
         vm.$root.$bvToast.toast("Username or password is incorrect!", {
@@ -27,7 +28,7 @@ export const actions = {
       });
   },
   async onCreateUser({ commit }, { email, password, name, vm }) {
-    const { value: accept } = await vm.$swal.fire({
+    const { isConfirmed } = await vm.$swal.fire({
       title: "Terms and conditions",
       input: "checkbox",
       inputValue: 1,
@@ -37,8 +38,7 @@ export const actions = {
         return !result && "You need to agree with T&C";
       }
     });
-
-    if (accept) {
+    if (isConfirmed) {
       await firebase
         .auth()
         .createUserWithEmailAndPassword(email, password)
@@ -48,7 +48,7 @@ export const actions = {
             variant: "success",
             solid: true
           });
-          this.$axios.post("users.json", {
+          vm.$axios.post("users.json", {
             email: email,
             password: password,
             id: response.user.uid,
@@ -60,7 +60,7 @@ export const actions = {
           return true;
         })
         .catch(err => {
-          this.$bvToast.toast(err.message, {
+          vm.$bvToast.toast(err.message, {
             title: "Error",
             variant: "danger",
             solid: true
@@ -71,7 +71,7 @@ export const actions = {
 };
 export const mutations = {
   setAuthorize(state, payload) {
-    state.loged_infor = true;
-    window.localStorage.setItem("loged_id", payload.uid);
+    state.logged_infor = true;
+    window.localStorage.setItem("logged_id", payload.uid);
   }
 };

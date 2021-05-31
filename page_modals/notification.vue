@@ -122,7 +122,7 @@ export default {
   data() {
     return {
       pendingAcept: [],
-      loged_id: null,
+      logged_id: null,
       isLoading: false,
       pendingYesterday: [],
       currentUserRequestId: null,
@@ -131,14 +131,14 @@ export default {
   },
   async mounted() {
     this.isLoading = true;
-    this.loged_id = window.localStorage.getItem("loged_id");
+    this.logged_id = window.localStorage.getItem("logged_id");
     const baseUser = [];
     const users = [];
 
-    const request_id = await this.$axios.get(`users.json`).then(response => {
+    const request_id = await this.$axios.get(`users.json`, { progress: false }).then(response => {
       let temp;
       for (let i in response.data) {
-        if (response.data[i].id !== this.loged_id) {
+        if (response.data[i].id !== this.logged_id) {
           users.push({ ...response.data[i], request_id: i });
         } else {
           temp = i;

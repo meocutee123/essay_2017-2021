@@ -111,8 +111,16 @@ export default {
         ? this.doSignUp()
         : await this.$store
             .dispatch("onSubmit", { ...this.form, vm: this })
-            .then(res => {
-              res === true && this.$router.push("/");
+            .then(response => {
+              if (response) {
+                this.$axios
+                  .post("login-users.json", {
+                    user: response.user.uid
+                  })
+                  .then(() => {
+                    this.$router.push("/");
+                  });
+              }
             });
     },
     async doSignUp() {

@@ -12,8 +12,17 @@
       />
       <b-icon icon="image" scale="1.3rem" @click="$refs.file.click()"></b-icon>
       <b-icon icon="share-fill" scale="1.3rem"></b-icon>
-      <input type="file" accept="audio/*;capture=microphone" ref="audio" style="display: none"/>
-      <b-icon icon="mic-fill" scale="1.3rem" @click="$refs.audio.click()"></b-icon>
+      <input
+        type="file"
+        accept="audio/*;capture=microphone"
+        ref="audio"
+        style="display: none"
+      />
+      <b-icon
+        icon="mic-fill"
+        scale="1.3rem"
+        @click="$refs.audio.click()"
+      ></b-icon>
     </div>
     <div class="message d-flex">
       <div class="text">
@@ -62,11 +71,11 @@ export default {
       content: "",
       images: [],
       tasks: [],
-      loged_id: null
+      logged_id: null
     };
   },
-  mounted(){
-    this.loged_id = window.localStorage.getItem('loged_id')
+  mounted() {
+    this.logged_id = window.localStorage.getItem("logged_id");
   },
   methods: {
     onDeleteImage(index) {
@@ -95,6 +104,7 @@ export default {
     },
     async onClickSend() {
       const params = this.message();
+      this.content = "";
       if (this.images.length) {
         let listImages = [];
         await Promise.all(this.tasks).then(
@@ -104,10 +114,10 @@ export default {
           () => (this.images = [])
         );
       }
-      this.content !== "" && (await this.sendHandler(params));
-      this.content = "";
+      await this.sendHandler(params);
     },
     async sendHandler(params) {
+      if (params.message === "") return;
       await this.$axios
         .post("messages.json", JSON.stringify(params))
         .then(response => {
@@ -122,7 +132,7 @@ export default {
         message: this.content,
         created_at: new Date(),
         chat_section: this.sectionID,
-        user: this.loged_id,
+        user: this.logged_id,
         status: 1
       };
     }

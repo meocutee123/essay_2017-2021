@@ -49,8 +49,9 @@
             v-for="(chat, index) in chatSections"
             :key="index"
             @click="openChatSection(chat.id)"
-            class="user d-flex"
+            :class="[{ onActive: chat.isActive }, 'user d-flex']"
           >
+            <div :ref="`section-${index}`"></div>
             <b-avatar size="3.3rem" src="/nayeon.jpg"></b-avatar>
             <span
               >{{ chat.name }}
@@ -72,7 +73,7 @@
 
       <template v-slot:friends>
         <div class="side-header d-flex">
-          <span>Friends</span>
+          <span>Online friends</span>
         </div>
 
         <div class="chats d-flex flex-column ???">
@@ -101,18 +102,24 @@
           <div
             v-for="(friend, index) in friends"
             :key="index"
-            class="user d-flex my-1 ml-2"
+            class="user d-flex my-1 ml-2 align-items-center"
           >
             <b-avatar width="65px" height="60px"></b-avatar>
             <div style="width: 80%" class="ml-3 mt-2">
               <h4 class="font-weight-bold">
                 {{ `${friend.name.firstName} ${friend.name.lastName}` }}
               </h4>
+              <small class="text-success">Online</small>
             </div>
           </div>
         </div>
       </template>
-      <ChatSection ref="chatSection" :sectionData="sectionData" />
+      <ChatSection
+        v-if="!isDefaultView"
+        ref="chatSection"
+        :sectionData="sectionData"
+      />
+      <Default v-else />
     </page-container>
   </client-only>
 </template>
@@ -120,63 +127,89 @@
 <script>
 import new_conversation from "../page_modals/new_conversation.vue";
 export default {
+  loading: false,
+  middleware: "auth",
   components: { new_conversation },
   data() {
     return {
-      isActive: false,
       onFocus: false,
       email: "",
       password: "",
       isDefaultView: true,
       chatSections: [],
       sectionData: {},
-      loged_id: null,
+      logged_id: null,
       isLoading: false,
       friends: [],
       isLoadingSection: false
     };
   },
+  created() {
+    this.$nuxt.$on("loadOnSearch", payload => {
+      this.openChatSection(payload);
+    });
+  },
   async mounted() {
-    this.loged_id = window.localStorage.getItem("loged_id");
+    this.logged_id = window.localStorage.getItem("logged_id");
     this.getFriends();
     await this.getData();
-
-    this.chatSections.length && this.openChatSection(this.chatSections[0].id);
   },
   methods: {
-    onCreate(payload) {
-      this.getData()
+    async onCreate(payload) {
+      await this.getData();
+      const index = this.chatSections.findIndex(
+        section => section.id === payload[0].request_id
+      );
+      const el = this.$refs[`section-${index}`][0];
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
       if (payload) {
-        console.log(payload);
-        this.openChatSection(payload[0].request_id);
+        await this.openChatSection(payload[0].request_id);
       }
     },
     async getFriends() {
       this.isLoading = true;
+      const listID = [];
       await this.$axios
-        .get("users.json")
+        .get("login-users.json", { progress: false })
         .then(response => {
-          const users = [];
-          for (const [key, value] of Object.entries(response.data)) {
-            if (value.id !== this.loged_id) {
-              users.push({ ...value, request_id: key });
+          for (let [key, value] of Object.entries(response.data)) {
+            if (value.user !== this.logged_id) {
+              listID.push({ ...value, request_id: key });
             }
           }
-          this.isLoading = false;
-          this.friends = users;
-        })
-        .catch(() => {
-          this.isLoading = false;
         });
+      let onlines = [];
+      await this.$axios
+        .get("users.json", { progress: false })
+        .then(response => {
+          for (let [key, value] of Object.entries(response.data)) {
+            if (value.id !== this.logged_id) {
+              onlines.push({ ...value, request_id: key });
+            }
+          }
+        });
+      const test = [];
+      listID.forEach(item => {
+        onlines.forEach(user => {
+          if (item.user === user.id) {
+            test.push(user);
+          }
+        });
+      });
+      this.isLoading = false;
+      this.friends = test;
+      //  console.log("wtf??", onlineFriends);
     },
     async getData() {
       this.isLoadingSection = true;
       await this.$axios
-        .get("chat-sections.json")
+        .get("chat-sections.json", { progress: false })
         .then(response => {
           const payload = [];
           for (let index in response.data) {
-            if (response.data[index].users.includes(this.loged_id)) {
+            if (response.data[index].users.includes(this.logged_id)) {
               payload.push({ ...response.data[index], id: index });
             }
             continue;
@@ -189,8 +222,23 @@ export default {
         });
     },
     async openChatSection(id) {
+      this.isDefaultView = false;
+
+      this.chatSections.forEach(item => {
+        if (item.id === id) {
+          item.isActive = true;
+        } else {
+          item.isActive = false;
+        }
+      });
+      setTimeout(() => {
+        const el = this.$el.getElementsByClassName("onActive")[0];
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 300);
       await this.$axios
-        .get(`/chat-sections/${id}.json`)
+        .get(`/chat-sections/${id}.json`, { progress: false })
         .then(response => {
           this.sectionData = Object.assign({}, response.data, { id: id });
           this.$refs.chatSection.isActive = false;
@@ -259,5 +307,8 @@ export default {
   border-radius: 50%;
   width: 2rem;
   height: 2rem;
+}
+.onActive {
+  background-color: #c6e3ff;
 }
 </style>
