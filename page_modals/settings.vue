@@ -19,11 +19,6 @@ export default {
     };
   },
   mounted() {
-    this.$axios.get("login-users.json", { progress: false }).then(({ data }) => {
-      for (let [key, value] of Object.entries(data)) {
-        this.users.push({ ...value, request_id: key });
-      }
-    });
     this.id = window.localStorage.getItem("logged_id");
   },
   methods: {
@@ -31,12 +26,17 @@ export default {
       localStorage.removeItem("token");
       localStorage.removeItem("logged_id");
       this.$router.push("/login");
-      console.log(this.users.filter(item => item.user === this.id).request_id);
-      this.$axios.delete(
-        `login-users/${
-          this.users.filter(item => item.user === this.id).request_id
-        }.json`
-      );
+      this.$axios
+        .get("login-users.json", { progress: false })
+        .then(({ data }) => {
+          for (let [key, value] of Object.entries(data)) {
+            if (value.user === this.id) {
+              this.$axios.delete(`login-users/${key}.json`, {
+                progress: false
+              });
+            }
+          }
+        });
     }
   }
 };

@@ -6,8 +6,14 @@
         { 'chat-header-active': isActive }
       ]"
     >
-      <div class="d-flex">
-        <h2>{{ sectionData.name }}</h2>
+      <div class="d-flex align-items-center">
+        <h2 id="title">{{ sectionData.name }}</h2>
+        <b-icon
+          style="cursor: pointer"
+          @click="changeTitle(sectionData)"
+          class="h6 ml-4"
+          icon="pencil-fill"
+        ></b-icon>
         <div
           class="ml-auto actions d-flex justify-content-between align-items-center"
         >
@@ -18,7 +24,10 @@
       </div>
       <div class="detail d-flex justify-content-between align-items-center">
         <p>
-          <span v-b-modal.paticipants>{{getParticipants + ' participants'}}</span> |
+          <span v-b-modal.paticipants>{{
+            getParticipants + " participants"
+          }}</span>
+          |
           <span
             @click="
               isActive = !isActive;
@@ -36,7 +45,10 @@
         </b-modal>
       </div>
     </div>
-    <div :class="['blink d-flex flex-column', { blinkActive: isActive }]">
+    <div
+      id="chats"
+      :class="['blink d-flex flex-column', { blinkActive: isActive }]"
+    >
       <div class="chat-section mt-auto px-3">
         <div
           v-if="isLoadingConversation"
@@ -57,8 +69,10 @@
             src="https://placekitten.com/300/300"
             size="6rem"
           ></b-avatar>
-          <h3>{{sectionData.name}}</h3>
-          <span>Now you can start conversation together</span>
+          <h3>{{ sectionData.name }}</h3>
+          <span @click="scrollToElement()"
+            >Now you can start conversation together</span
+          >
         </div>
         <div
           v-if="isLoadingConversation"
@@ -301,7 +315,8 @@ export default {
       images: [],
       logged_id: null,
       isLoadingGallery: false,
-      isLoadingConversation: false
+      isLoadingConversation: false,
+      scrolled: false
     };
   },
   async mounted() {
@@ -312,8 +327,7 @@ export default {
       $nuxt.$emit("closeModal");
     },
     loadOnSent(params) {
-      this.messages.push(params);
-      setTimeout(()=>{this.scrollToElement()}, 400)
+      // this.messages.push(params);
     },
     async onSearch() {
       const { value } = await this.$swal.fire({
@@ -349,7 +363,7 @@ export default {
       });
     },
     async getData() {
-      this.messages = []
+      this.messages = [];
       this.isLoadingConversation = true;
       const listMessage = [];
       await this.$axios.get("messages.json", { progress: false }).then(res => {
@@ -359,17 +373,100 @@ export default {
             listMessage.push({ id: index, ...item });
           }
         }
-        this.isLoadingConversation = false;
-        this.messages = listMessage;
+        // this.loadMessage();
       });
       this.isLoadingConversation = false;
-      this.scrollToElement();
+      this.messages = listMessage;
+      setTimeout(() => {
+        this.scrollToElement();
+      }, 300);
+    },
+    loadMessage() {
+      const audio = new Audio(
+        "https://firebasestorage.googleapis.com/v0/b/getting-started-613bf.appspot.com/o/9convert.com%20-%20facebook%20new%20message%20pop%20ding.mp3?alt=media&token=e0cc2b9c-3906-4bb4-8fb3-d1ba33d1e203"
+      );
+
+      setInterval(async () => {
+        let listMessage = [];
+        await this.$axios
+          .get("messages.json", { progress: false })
+          .then(res => {
+            for (let index in res.data) {
+              let item = res.data[index];
+              if (
+                item.chat_section === this.sectionData.id &&
+                item.status === 1
+              ) {
+                listMessage.push({ id: index, ...item });
+              }
+            }
+          });
+
+        if (listMessage.length > this.messages.length) {
+          let index = listMessage.length - this.messages.length;
+          let object = listMessage.splice(
+            Math.max(listMessage.length - index),
+            1
+          );
+          this.messages.push(...object);
+          if (object[0].user !== this.logged_id) {
+            audio.play();
+          }
+          setTimeout(() => {
+            this.scrollToElement();
+          }, 3000);
+        }
+      }, 200000);
     },
     onDelete(id, index) {
       this.messages.splice(index, 1);
-      this.$axios.patch(`/messages/${id}.json`, {
-        status: 0
-      });
+      this.$axios.patch(
+        `/messages/${id}.json`,
+        {
+          status: 0
+        },
+        { progress: false }
+      );
+    },
+    async changeTitle({ id }) {
+      this.$swal
+        .fire({
+          title: "Enter conversation name",
+          input: "text",
+          showCancelButton: true,
+          confirmButtonText: "Submit",
+          showLoaderOnConfirm: true,
+          inputValidator: value => {
+            if (!value) {
+              return "You need to write something!";
+            }
+          },
+          preConfirm: text => {
+            // if(text === "") {
+            //   this.$swal.showValidationMessage(`Something went wrong: ${error}`);
+            // }
+            return this.$axios
+              .patch(
+                `/chat-sections/${id}.json`,
+                { name: text },
+                { progress: false }
+              )
+              .then(response => {
+                return text;
+              })
+              .catch(error => {
+                this.$swal.showValidationMessage(
+                  `Something went wrong: ${error}`
+                );
+              });
+          },
+          allowOutsideClick: () => !Swal.isLoading()
+        })
+        .then(result => {
+          if (result.isConfirmed) {
+            document.querySelector("#title").innerHTML = result.value;
+          }
+        });
     },
     scrollToElement() {
       const el = this.$el.getElementsByClassName("bottom")[0];
@@ -378,12 +475,12 @@ export default {
       }
     }
   },
-  computed:{
-    getParticipants(){
-      if(this.sectionData.users){
-        return this.sectionData.users.split(",").length
+  computed: {
+    getParticipants() {
+      if (this.sectionData.users) {
+        return this.sectionData.users.split(",").length;
       }
-      return 1
+      return 1;
     }
   }
 };

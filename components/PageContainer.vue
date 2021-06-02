@@ -1,16 +1,10 @@
 <template>
-  <div class="app">
-    <div class="chat-app d-flex">
-      <div class="side-bar d-flex flex-column">
-        <slot name="sidebar"></slot>
-        <slot name="friends"></slot>
-      </div>
-      <div class="chat-area">
-        <slot />
-      </div>
-      <div class="footer">
-        <slot name="footer" />
-      </div>
+  <div id="app" class="d-flex">
+    <div class="side-bar">
+      <slot name="sidebar"></slot>
+    </div>
+    <div class="chat-area">
+      <slot />
     </div>
   </div>
 </template>
@@ -20,20 +14,21 @@ export default {};
 </script>
 
 <style lang="scss" scoped>
-.app {
+#app {
   box-sizing: border-box;
-  height: 100%;
-  .chat-app {
-    height: inherit;
-    .side-bar {
-      width: 330px;
-      height: inherit;
-      border: 1px solid #e4e6eb;
-    }
-    .chat-area{
-      width: calc(100% - 330px);
-      height: inherit;
-    }
+  height: 90vh;
+  .side-bar {
+    width: 330px;
+    height: 100%;
+    box-sizing: border-box;
+    border: 1px solid #e4e6eb;
+  }
+  .chat-area {
+    width: 100%;
+    height: 100%;
+    border: 1px solid #e4e6eb;
+    border-left: 0;
+    box-sizing: border-box;
   }
 }
 </style>

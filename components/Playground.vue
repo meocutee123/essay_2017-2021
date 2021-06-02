@@ -52,7 +52,7 @@
       </div>
       <b-icon
         @click="onClickSend()"
-        class="focus-icon mt-2 ml-3"
+        class="focus-icon mt-2 mx-3"
         :icon="onFocus ? 'cursor-fill' : 'heart-fill'"
         scale="1.4rem"
       ></b-icon>
@@ -117,9 +117,9 @@ export default {
       await this.sendHandler(params);
     },
     async sendHandler(params) {
-      if (params.message === "") return;
+      if (params.message === "" || params.message === "\n") return;
       await this.$axios
-        .post("messages.json", JSON.stringify(params))
+        .post("messages.json", JSON.stringify(params), { progress: false })
         .then(response => {
           this.$emit("sent", params);
         })
@@ -154,7 +154,7 @@ export default {
     .b-icon {
       &:hover {
         cursor: pointer;
-        color: #fec5bb;
+        color: #bbfee4;
       }
     }
   }

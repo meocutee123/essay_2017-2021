@@ -49,19 +49,25 @@
       >
         <b-avatar size="4rem" class="mr-3" src="/bae-joohyun.png"></b-avatar>
         <div>
-          <h4 class="font-weight-bolder">
+          <h4 class="font-weight-bolder mb-0">
             {{ person.name.firstName }} {{ person.name.lastName }}
           </h4>
+          <small
+            class="text-success"
+            :id="`person-${index}`"
+            >{{ person.pending && "(Pending accept)"}}</small
+          >
           <p class="m-0">
             Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur,
             reprehenderit.
           </p>
         </div>
         <b-icon
-          :ref="`person-${index}`"
+          v-if="!person.pending"
           class="mt-1"
+          :id="`icon-${index}`"
           style="color: #41b883"
-          :icon="'person-plus-fill'"
+          icon="person-plus-fill"
           scale="1.5rem"
           @click="sendRequest(person.request_id, index)"
         ></b-icon>
@@ -89,7 +95,7 @@
           style="color: red"
           :icon="'person-x-fill'"
           scale="1.5rem"
-          @click="removeFriend(person.request_id)"
+          @click="removeFriend(person.request_id, person.id)"
         ></b-icon>
       </div>
     </div>
@@ -111,7 +117,7 @@ export default {
   },
   async mounted() {
     this.logged_id = window.localStorage.getItem("logged_id");
-    this.isLoading = true
+    this.isLoading = true;
     await this.$axios.get("users.json", { progress: false }).then(response => {
       const users = [];
       for (const [key, value] of Object.entries(response.data)) {
@@ -121,14 +127,23 @@ export default {
           users.push({ ...value, request_id: key });
         }
       }
-      this.isLoading = false
+      this.isLoading = false;
       this.users = users;
     });
     this.getFriends();
-    this.isLoading = false
+    this.isLoading = false;
   },
   methods: {
     getFriends() {
+      const currentUser = this.currentUser[0];
+      const listRequestID = [];
+      if (currentUser.requests) {
+        for (let i in currentUser.requests) {
+          listRequestID.push(
+            currentUser.requests[i].request_from
+          );
+        }
+      }
       const listFriendsId = [];
       this.friends = this.currentUser.filter(
         item =>
@@ -138,27 +153,58 @@ export default {
           })
       );
       const listFriends = [];
-      const listSuggested = [];
-      console.log(this.users);
       this.users.map(item => {
         listFriendsId.includes(item.id)
           ? listFriends.push(item)
-          : listSuggested.push(item);
+          : this.handleSuggested(listRequestID, item);
       });
       this.friends = listFriends;
-      this.people = listSuggested;
+    },
+    handleSuggested(ids, item) {
+      if (ids.includes(item.id)) {
+        this.people.push({ ...item, pending: true });
+        return;
+      }
+      this.people.push(item);
     },
     async sendRequest(request_id, index) {
+      let person = this.$el.querySelector(`#person-${index}`);
+      let icon = this.$el.querySelector(`#icon-${index}`);
+      if (person) {
+        person.innerHTML = "(Pending accept)";
+      }
+
+      if (icon) {
+        icon.setAttribute("style", "display: none");
+      }
       await this.$axios
         .post(`users/${request_id}/requests.json`, {
           request_from: this.logged_id,
           type: "create",
           status: 0,
           time: new Date().toLocaleDateString("en-GB")
-        })
+        }, { progress: false })
         .then(res => {});
     },
-    removeFriend() {}
+    removeFriend(req, id) {
+      const user = this.users.find(user => user.id === id);
+      let fWR;
+      for (let i in user.friends) {
+        if (user.friends[i].uid === this.logged_id) {
+          fWR = i;
+        }
+      }
+      this.$axios.delete(`users/${req}/friends/${fWR}.json`); //delete jisoo from rose
+      let fOM;
+      for (let i in this.currentUser[0].friends) {
+        if (this.currentUser[0].friends[i].uid === id) {
+          fOM = i;
+        }
+      }
+      this.$axios.delete(
+        `users/${this.currentUser[0].request_id}/friends/${fOM}.json`
+      ); //user
+    }
   }
 };
 </script>

@@ -1,86 +1,81 @@
 <template>
-  <div class="sticky-top">
-    <b-navbar
-      class="header border-bottom d-flex justify-content-between"
-      toggleable="lg"
-      type="dark"
-      variant="light"
-    >
-      <b-navbar-brand class="d-flex">
-        <img src="/logo.png" alt="logo" style="max-height: 33px" />
-        <div class="brand ml-1">
-          <span class="h6">n</span>
-          <span class="h5">e</span>
-          <span class="h4">x</span>
-          <span class="h3">t</span>
-          <span class="h2" style="color: black; font-weight: bold">TREND</span>
-        </div>
-      </b-navbar-brand>
-      <div class="search d-flex">
-        <b-input-group style="position: relative">
-          <b-form-input
-            id="search"
-            placeholder="Type to search for chat"
-          ></b-form-input>
-        </b-input-group>
-        <div
-          style="position: absolute; color: #273849; background: #06d6a0; top: 3.3rem; width: 200px; border-radius: .5rem"
-          id="htmlOut"
-        ></div>
-        <div class="hamburger ml-3" @click="isActive = !isActive">
-          <b-icon icon="list" scale="1.5rem"></b-icon>
-        </div>
+  <b-navbar
+    class="header border-bottom d-flex justify-content-between py-0"
+    toggleable="lg"
+    type="dark"
+    variant="light"
+  >
+    <b-navbar-brand class="d-flex">
+      <img src="/logo.png" alt="logo" style="max-height: 33px" />
+      <div class="brand ml-1">
+        <span class="h6">n</span>
+        <span class="h5">e</span>
+        <span class="h4">x</span>
+        <span class="h3">t</span>
+        <span class="h2" style="color: black; font-weight: bold">TREND</span>
       </div>
-      <div :class="[{ active: isActive }, 'home d-flex align-items-center']">
-        <div @click="openModal('profile')" class="profile">
-          <b-avatar
-            variant="danger"
-            size="2rem"
-            src="https://placekitten.com/300/300"
-          ></b-avatar
-          ><span>{{ logged_user[0] && logged_user[0].name.firstName }}</span>
-        </div>
-        <b-button
-          pill
-          class="btn-light-grey"
-          id="friends"
-          @click="openModal('friends')"
-        >
-          <b-icon icon="people-fill" aria-hidden="true" scale=".8rem"></b-icon>
-          <b-tooltip target="friends" triggers="hover">Friends</b-tooltip>
-        </b-button>
-        <b-button
-          pill
-          class="btn-light-grey"
-          id="notification"
-          @click="openModal('notification')"
-        >
-          <b-icon icon="bell-fill" aria-hidden="true" scale=".8rem" />
-          <b-badge class="badge" variant="danger">4</b-badge>
-          <b-tooltip target="notification" triggers="hover"
-            >Notification</b-tooltip
-          >
-        </b-button>
-        <b-button
-          pill
-          class="btn-light-grey"
-          v-b-tooltip.hover
-          title="Settings"
-          @click="openModal('settings')"
-          ><b-icon
-            icon="caret-up-fill"
-            font-scale=".8"
-            aria-hidden="true"
-            flip-h
-            flip-v
-          ></b-icon
-        ></b-button>
+    </b-navbar-brand>
+    <div class="search d-flex">
+      <b-input-group style="position: relative">
+        <b-form-input
+          id="search"
+          placeholder="Type to search for chat"
+        ></b-form-input>
+      </b-input-group>
+      <div
+        style="z-index: 1000;position: absolute; color: #273849; background: #06d6a0; top: 3.3rem; width: 200px; border-radius: .5rem"
+        id="htmlOut"
+      ></div>
+    </div>
+    <div :class="[{ active: isActive }, 'home d-flex align-items-center']">
+      <div @click="openModal('profile')" class="profile">
+        <b-avatar
+          variant="danger"
+          size="2rem"
+          src="https://placekitten.com/300/300"
+        ></b-avatar
+        ><span>{{ logged_user[0] && logged_user[0].name.firstName }}</span>
       </div>
-    </b-navbar>
-    <v-modal name="modal">
-      <component :is="isComponent"></component>
-    </v-modal>
-  </div>
+      <b-button
+        pill
+        class="btn-light-grey"
+        id="friends"
+        @click="openModal('friends')"
+      >
+        <b-icon icon="people-fill" aria-hidden="true" scale=".8rem"></b-icon>
+        <b-tooltip target="friends" triggers="hover">Friends</b-tooltip>
+      </b-button>
+      <b-button
+        pill
+        class="btn-light-grey"
+        id="notification"
+        @click="openModal('notification')"
+      >
+        <b-icon icon="bell-fill" aria-hidden="true" scale=".8rem" />
+        <b-badge class="badge" variant="danger" id="noti"></b-badge>
+        <b-tooltip target="notification" triggers="hover"
+          >Notification</b-tooltip
+        >
+      </b-button>
+      <b-button
+        pill
+        class="btn-light-grey"
+        v-b-tooltip.hover
+        title="Settings"
+        @click="openModal('settings')"
+        ><b-icon
+          icon="caret-up-fill"
+          font-scale=".8"
+          aria-hidden="true"
+          flip-h
+          flip-v
+        ></b-icon
+      ></b-button>
+      <v-modal name="modal">
+        <component :is="isComponent"></component>
+      </v-modal>
+    </div>
+  </b-navbar>
 </template>
 <script>
 import profile from "~/page_modals/profile";
@@ -113,6 +108,7 @@ export default {
     await this.getloggedUser();
     const search = this.$el.querySelector("#search");
     search.addEventListener("input", () => this.search(search.value));
+    // this.getNotification();
   },
   methods: {
     async search(searchText) {
@@ -155,15 +151,15 @@ export default {
     },
     handler(payload) {
       $nuxt.$emit("loadOnSearch", payload);
-      this.$el.querySelector('#htmlOut').innerHTML = ''
+      this.$el.querySelector("#htmlOut").innerHTML = "";
     },
     async getloggedUser() {
       await this.$axios.get(`users.json`).then(({ data }) => {
-        Object.entries(data).forEach(user => {
-          if (user[1].id === this.logged_id) {
-            this.logged_user.push(user[1]);
+        for (let i in data) {
+          if (data[i].id === this.logged_id) {
+            this.logged_user.push({ ...data[i], request_id: i });
           }
-        });
+        }
       });
     },
     openModal(name) {
@@ -172,6 +168,24 @@ export default {
     },
     closeModal() {
       this.$modal.close({ name: "modal" });
+    },
+    getNotification() {
+      setInterval(async () => {
+        await this.$axios
+          .get(`users/${this.logged_user[0].request_id}.json`, {
+            progress: false
+          })
+          .then(response => {
+            if (response.data.requests) {
+              let length = Object.keys(response.data.requests).length;
+              if (length) {
+                this.$el.querySelector("#noti").innerHTML = length;
+              } else {
+                this.$el.querySelector("#noti").innerHTML = "";
+              }
+            }
+          });
+      }, 10000);
     }
   }
 };
@@ -179,7 +193,7 @@ export default {
 
 <style lang="scss" scoped>
 .header {
-  height: 60px;
+  height: 10vh;
   background-color: #fffffc !important;
   .brand {
     color: #fec5bb;
@@ -188,11 +202,6 @@ export default {
     input {
       border-radius: 2rem;
     }
-  }
-  .hamburger {
-    align-self: center;
-    display: none;
-    cursor: pointer;
   }
   .home {
     .b-icon {
@@ -234,23 +243,5 @@ export default {
 }
 .center {
   right: 500px;
-}
-
-@media only screen and (max-width: 940px) {
-  .hamburger {
-    display: block !important;
-  }
-  .home {
-    flex-direction: column-reverse;
-    position: fixed;
-    background-color: #ffd7ba;
-    height: calc(100% - 60px);
-    width: 250px !important;
-    top: 60px;
-    padding: 2rem 0;
-    right: 0;
-    transform: translateX(100%);
-    // transition: 0.5s ease-in;
-  }
 }
 </style>
