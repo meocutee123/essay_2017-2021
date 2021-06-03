@@ -138,7 +138,7 @@ export default {
     const request_id = await this.$axios.get(`users.json`, { progress: false }).then(response => {
       let temp;
       for (let i in response.data) {
-        if (response.data[i].id !== this.logged_id) {
+        if (response.data[i].email !== this.logged_id) {
           users.push({ ...response.data[i], request_id: i });
         } else {
           temp = i;
@@ -148,12 +148,12 @@ export default {
       return temp;
     });
     this.currentUserRequestId = request_id;
-    this.currentUserId = baseUser[0].id;
+    this.currentUserId = baseUser[0].email;
     const today = [];
     const yesterday = [];
     for (let index in baseUser[0].requests) {
       let temp = users.filter(
-        user => user.id === baseUser[0].requests[index].request_from
+        user => user.email === baseUser[0].requests[index].request_from
       );
       today.push({ ...temp[0], delete_id: index });
     }
@@ -170,7 +170,7 @@ export default {
       });
       await this.$axios
         .post(`users/${this.currentUserRequestId}/friends.json`, {
-          uid: user.id
+          uid: user.email
         })
         .then(res => {
           from === "today" && this.pendingAcept.splice(index, 1);

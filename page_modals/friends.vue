@@ -121,7 +121,7 @@ export default {
     await this.$axios.get("users.json", { progress: false }).then(response => {
       const users = [];
       for (const [key, value] of Object.entries(response.data)) {
-        if (value.id === this.logged_id) {
+        if (value.email === this.logged_id) {
           this.currentUser.push({ ...value, request_id: key });
         } else {
           users.push({ ...value, request_id: key });
@@ -154,7 +154,7 @@ export default {
       );
       const listFriends = [];
       this.users.map(item => {
-        listFriendsId.includes(item.id)
+        listFriendsId.includes(item.email)
           ? listFriends.push(item)
           : this.handleSuggested(listRequestID, item);
       });

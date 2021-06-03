@@ -32,9 +32,9 @@
         <b-avatar
           variant="danger"
           size="2rem"
-          src="https://placekitten.com/300/300"
+          :src="`${logged_user[0] && logged_user[0].picture}`"
         ></b-avatar
-        ><span>{{ logged_user[0] && logged_user[0].name.firstName }}</span>
+        ><span>{{ logged_user[0] && logged_user[0].family_name }}</span>
       </div>
       <b-button
         pill
@@ -72,7 +72,7 @@
         ></b-icon
       ></b-button>
       <v-modal name="modal">
-        <component :is="isComponent"></component>
+        <component :is="isComponent" :user="logged_user[0]"></component>
       </v-modal>
     </div>
   </b-navbar>
@@ -111,6 +111,7 @@ export default {
     // this.getNotification();
   },
   methods: {
+
     async search(searchText) {
       await this.$axios
         .get("chat-sections.json", { progress: false })
@@ -156,7 +157,7 @@ export default {
     async getloggedUser() {
       await this.$axios.get(`users.json`).then(({ data }) => {
         for (let i in data) {
-          if (data[i].id === this.logged_id) {
+          if (data[i].email === this.logged_id) {
             this.logged_user.push({ ...data[i], request_id: i });
           }
         }

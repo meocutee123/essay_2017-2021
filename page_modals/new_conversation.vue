@@ -10,7 +10,7 @@
       </div>
       <div class="d-flex selected-preview">
         <div class="mr-2" v-for="(item, index) in friends" :key="index">
-          <span v-if="item.selected">{{ item.name.firstName }}</span>
+          <span v-if="item.selected">{{ item.name.family_name }}</span>
         </div>
       </div>
       <h6>Suggested</h6>
@@ -89,14 +89,9 @@
               'd-flex align-items-center mb-2'
             ]"
           >
-            <b-img
-              rounded="circle"
-              src="https://picsum.photos/50/50/?image=41"
-              fluid
-              alt=""
-            />
+            <b-img rounded="circle" :src="`${friend.picture}`" fluid alt="" />
             <h5 class="font-weight-bold ml-2">
-              {{ `${friend.name.firstName} ${friend.name.lastName}` }}
+              {{ `${friend.name}` }}
             </h5>
           </div>
         </b-col>
@@ -119,6 +114,7 @@
 </template>
 
 <script>
+import firebase from "firebase/app";
 export default {
   data() {
     return {
@@ -152,44 +148,58 @@ export default {
         .filter(item => item.selected == true)
         .map(item => item.id);
       listId.push(this.logged_id);
-      await this.$axios.get("chat-sections.json", { progress: false }).then(({ data }) => {
-        if (data !== null) {
-          for (let [key, value] of Object.entries(data)) {
-            const sections = value.users.split(",");
-            let difference = sections
-              .filter(x => !listId.includes(x))
-              .concat(listId.filter(x => !sections.includes(x)));
-            if (difference.length === 0) {
-              this.chatSection.push({ ...value, request_id: key });
-              break;
+      await this.$axios
+        .get("chat-sections.json", { progress: false })
+        .then(({ data }) => {
+          if (data !== null) {
+            for (let [key, value] of Object.entries(data)) {
+              const sections = value.users.split(",");
+              let difference = sections
+                .filter(x => !listId.includes(x))
+                .concat(listId.filter(x => !sections.includes(x)));
+              if (difference.length === 0) {
+                this.chatSection.push({ ...value, request_id: key });
+                break;
+              }
             }
           }
-        }
-      });
+        });
     },
     async getUsers() {
       this.isLoading = true;
-      await this.$axios.get("users.json", { progress: false }).then(response => {
-        const users = [];
-        for (let [key, value] of Object.entries(response.data)) {
-          if (value.id !== this.logged_id) {
-            users.push({ ...value, request_id: key, selected: false });
+      await this.$axios
+        .get("users.json", { progress: false })
+        .then(response => {
+          const users = [];
+          for (let [key, value] of Object.entries(response.data)) {
+            if (value.email !== this.logged_id) {
+              users.push({ ...value, request_id: key, selected: false });
+            }
           }
-        }
-        this.isLoading = false;
-        this.values = users;
-      });
+          this.isLoading = false;
+          this.values = users;
+        });
       this.isLoading = false;
     },
     async newConversation() {
       const listUsers = this.friends.filter(item => item.selected === true);
-      const users = listUsers.map(item => item.id);
+      const users = listUsers.map(item => item.email);
       users.push(this.logged_id);
+      const chatRef = firebase.firestore().collection("chat_sections");
+      chatRef
+        .add({
+          users: users.join(","),
+          name: listUsers.map(item => item.family_name).join(", "),
+          created_at: new Date(),
+          created_by: this.logged_id
+        })
+        .then(docRef => console.log("Document written with ID: " + docRef.id))
+        .catch(error => console.log("Something went wrong."));
       return await this.$axios.post(
         "/chat-sections.json",
         JSON.stringify({
           users: users.join(","),
-          name: listUsers.map(item => item.name.firstName).join(", ")
+          name: listUsers.map(item => item.family_name).join(", ")
         })
       );
     },
@@ -215,7 +225,7 @@ export default {
           result.push(user);
           return;
         }
-        let fullname = `${user.name.firstName} ${user.name.lastName}`;
+        let fullname = `${user.name}`;
         if (fullname.toLowerCase().includes(value)) {
           result.push(user);
         }

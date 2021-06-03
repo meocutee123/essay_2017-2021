@@ -11,7 +11,7 @@
           <b-icon icon="pencil-square" aria-hidden="true"></b-icon>
         </button>
         <b-modal id="newConversation" hide-footer hide-header>
-          <new_conversation />
+          <new_conversation @onCreate="onCreate" />
         </b-modal>
       </div>
       <div style="position: relative" class="d-flex align-items-center px-2">
@@ -113,6 +113,19 @@ export default {
           this.isLoadingSection = false;
         });
     },
+    async onCreate(payload) {
+      await this.getData();
+      const index = this.chatSections.findIndex(
+        section => section.id === payload[0].request_id
+      );
+      const el = this.$refs[`section-${index}`][0];
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+      if (payload) {
+        await this.openChatSection(payload[0].request_id);
+      }
+    },
     async openChatSection(id) {
       this.isDefaultView = false;
       this.chatSections.forEach(item => {
@@ -174,7 +187,7 @@ export default {
     border-right: 1px solid #e4e6eb;
     height: calc(100% - 77.78px - 16px);
     width: 100%;
-    overflow-y: scroll; 
+    overflow-y: scroll;
     box-sizing: border-box;
     .user {
       margin: 0.5rem;

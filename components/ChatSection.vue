@@ -373,7 +373,7 @@ export default {
             listMessage.push({ id: index, ...item });
           }
         }
-        // this.loadMessage();
+        this.loadMessage(); 
       });
       this.isLoadingConversation = false;
       this.messages = listMessage;
@@ -414,9 +414,9 @@ export default {
           }
           setTimeout(() => {
             this.scrollToElement();
-          }, 3000);
+          }, 300);
         }
-      }, 200000);
+      }, 5000);
     },
     onDelete(id, index) {
       this.messages.splice(index, 1);
