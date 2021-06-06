@@ -48,47 +48,35 @@
           </div>
         </div>
       </template> -->
-      <ChatSection ref="chatSection" :sectionData="sectionData" />
+      <component
+        :is="activeComponent"
+        ref="chatSection"
+        :sectionData="sectionData"
+      />
     </page-container>
   </client-only>
 </template>
 
 <script>
+import _chat from "~/components/ChatSection";
+import _default from "~/components/Default";
 export default {
-  loading: false,
   // middleware: "auth",
+  components: {
+    "chat-section": _chat,
+    "default-section": _default
+  },
   data() {
     return {
-      onFocus: false,
-      email: "",
-      password: "",
-      isDefaultView: true,
-      chatSections: [],
-      sectionData: {},
-      logged_id: null,
-      isLoading: false,
-      friends: [],
-      isLoadingSection: false
+      sectionData: [],
+      activeComponent: "default-section"
     };
   },
   methods: {
-    async onCreate(payload) {
-      await this.getData();
-      const index = this.chatSections.findIndex(
-        section => section.id === payload[0].request_id
-      );
-      const el = this.$refs[`section-${index}`][0];
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth" });
-      }
-      if (payload) {
-        await this.openChatSection(payload[0].request_id);
-      }
-    },
     openChatSection(payload) {
       this.sectionData = payload;
+      this.activeComponent = "chat-section";
       this.$refs.chatSection.isActive = false;
-      this.$refs.chatSection.getData();
     }
   }
 };

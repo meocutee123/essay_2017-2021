@@ -106,6 +106,15 @@
         </div>
         <template v-for="(content, index) in messages">
           <div
+            style="font-size: .7rem"
+            id="date"
+            class="text-muted text-center border-bottom"
+            v-if="content.newDate"
+            :key="`as-${index}`"
+          >
+            {{ new Date(content.created_at).toDateString() }}
+          </div>
+          <div
             :key="index"
             :class="
               `conversations d-flex align-items-${
@@ -113,7 +122,7 @@
               } flex-column p-2 `
             "
           >
-            <div v-if="content.status === 1" class="content">
+            <div class="content">
               <div
                 class="message"
                 :style="
@@ -142,6 +151,7 @@
 
                 <span v-else>{{ content.message }}</span>
               </div>
+
               <div
                 class="actions"
                 :style="
@@ -162,15 +172,25 @@
                 </div>
               </div>
             </div>
-            <b-avatar
-              v-if="content.status === 1"
-              :class="`${content.user === logged_id} ? 'to' : 'from'`"
-              size="1rem"
-            ></b-avatar>
+            <div
+              :class="[
+                'icon-float d-flex align-items-center',
+                content.user === logged_id ? '' : 'flex-row-reverse'
+              ]"
+            >
+              <small class="mx-1">{{
+                new Date(content.created_at).toLocaleTimeString()
+              }}</small
+              ><b-avatar
+                :class="`${content.user === logged_id} ? 'to' : 'from'`"
+                size="1rem"
+              ></b-avatar>
+            </div>
           </div>
         </template>
         <div class="bottom"></div>
       </div>
+      <Playground :sectionID="sectionData.id" @sent="loadOnSent" />
     </div>
     <div :class="[{ active: isActive }, 'gallery px-2']" id="gallery">
       <div class="gallery-head d-flex align-items-center">
@@ -290,11 +310,11 @@
         </b-row>
       </div>
     </div>
-    <Playground :sectionID="sectionData.id" @sent="loadOnSent" />
   </section>
 </template>
 
 <script>
+import firebase from "firebase/app";
 import paticipants from "../page_modals/paticipants.vue";
 
 export default {
@@ -321,6 +341,7 @@ export default {
   },
   async mounted() {
     this.logged_id = window.localStorage.getItem("logged_id");
+    this.getData();
   },
   methods: {
     onClickOutside() {
@@ -348,75 +369,62 @@ export default {
     },
     async getGallery() {
       this.isLoadingGallery = true;
-      const listImages = [];
-      await this.$axios.get("messages.json", { progress: false }).then(res => {
-        for (let index in res.data) {
-          let item = res.data[index];
-          if (item.chat_section === this.sectionData.id && item.status === 1) {
-            if (Array.isArray(item.message)) {
-              listImages.push(...item.message);
-            }
-          }
-        }
-        this.isLoadingGallery = false;
-        this.images = listImages;
-      });
-    },
-    async getData() {
-      this.messages = [];
-      this.isLoadingConversation = true;
-      const listMessage = [];
-      await this.$axios.get("messages.json", { progress: false }).then(res => {
-        for (let index in res.data) {
-          let item = res.data[index];
-          if (item.chat_section === this.sectionData.id && item.status === 1) {
-            listMessage.push({ id: index, ...item });
-          }
-        }
-        this.loadMessage(); 
-      });
-      this.isLoadingConversation = false;
-      this.messages = listMessage;
-      setTimeout(() => {
-        this.scrollToElement();
-      }, 300);
-    },
-    loadMessage() {
-      const audio = new Audio(
-        "https://firebasestorage.googleapis.com/v0/b/getting-started-613bf.appspot.com/o/9convert.com%20-%20facebook%20new%20message%20pop%20ding.mp3?alt=media&token=e0cc2b9c-3906-4bb4-8fb3-d1ba33d1e203"
-      );
-
-      setInterval(async () => {
-        let listMessage = [];
-        await this.$axios
-          .get("messages.json", { progress: false })
-          .then(res => {
-            for (let index in res.data) {
-              let item = res.data[index];
-              if (
-                item.chat_section === this.sectionData.id &&
-                item.status === 1
-              ) {
-                listMessage.push({ id: index, ...item });
+      firebase
+        .database()
+        .ref(`chat-sections/${this.sectionData.id}/messages`)
+        .on("value", snapshot => {
+          const listImages = [];
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            for (let index in data) {
+              let item = data[index];
+              if (Array.isArray(item.message)) {
+                listImages.push(...item.message);
               }
             }
-          });
-
-        if (listMessage.length > this.messages.length) {
-          let index = listMessage.length - this.messages.length;
-          let object = listMessage.splice(
-            Math.max(listMessage.length - index),
-            1
-          );
-          this.messages.push(...object);
-          if (object[0].user !== this.logged_id) {
-            audio.play();
+            this.isLoadingGallery = false;
+            this.images = listImages;
+          } else {
+            this.isLoadingGallery = false;
+            this.images = [];
           }
-          setTimeout(() => {
-            this.scrollToElement();
-          }, 300);
-        }
-      }, 5000);
+        });
+    },
+    getData() {
+      this.isLoadingConversation = true;
+      let temp;
+      let newDate = true;
+      firebase
+        .database()
+        .ref("chat-sections/" + this.sectionData.id + "/messages")
+        .on("value", snapshot => {
+          const listMessage = [];
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            for (let index in data) {
+              let item = data[index];
+              let date = new Date(item.created_at).toLocaleDateString();
+              if (temp != date) {
+                newDate = true;
+                temp = date;
+              } else {
+                newDate = false;
+              }
+              listMessage.push({ id: index, ...item, newDate: newDate });
+            }
+            this.messages = listMessage;
+            setTimeout(() => {
+              this.isLoadingConversation = false;
+              this.scrollToElement();
+            }, 300);
+          } else {
+            this.messages = [];
+            setTimeout(() => {
+              this.isLoadingConversation = false;
+              this.scrollToElement();
+            }, 300);
+          }
+        });
     },
     onDelete(id, index) {
       this.messages.splice(index, 1);
@@ -482,6 +490,14 @@ export default {
       }
       return 1;
     }
+  },
+  watch: {
+    sectionData: {
+      deep: true,
+      handler() {
+        this.getData();
+      }
+    }
   }
 };
 </script>
@@ -545,6 +561,7 @@ section {
     width: 100%;
     position: relative;
     .chat-section {
+      overflow-x: hidden;
       position: absolute;
       width: 100%;
       bottom: 3.5rem;
@@ -555,9 +572,9 @@ section {
       .conversations {
         max-width: 400px;
         position: relative;
-        .b-avatar {
+        .icon-float {
           position: absolute;
-          bottom: 1.3rem;
+          bottom: -4px;
         }
         .to {
           right: -0.8rem;
@@ -667,7 +684,7 @@ section {
     transform: translateX(0);
   }
   .blinkActive {
-    width: calc(100% - 300px);
+    width: calc(100% - 300px) !important;
   }
   .chat-header-active {
     width: calc(100% - 300px);

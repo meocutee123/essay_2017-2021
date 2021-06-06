@@ -35,6 +35,14 @@
               @click="onDeleteImage(index)"
             ></b-icon>
           </div>
+          <b-icon
+            id="arrow-clockwise"
+            class="align-self-center"
+            icon="arrow-clockwise"
+            animation="spin"
+            scale="1.3rem"
+            style="color: #41b883; display: none"
+          ></b-icon>
         </div>
         <textarea
           rows="2"
@@ -53,7 +61,7 @@
       <b-icon
         @click="onClickSend()"
         class="focus-icon mt-2 mx-3"
-        :icon="onFocus ? 'cursor-fill' : 'heart-fill'"
+        icon="cursor-fill"
         scale="1.4rem"
       ></b-icon>
     </div>
@@ -71,11 +79,26 @@ export default {
       content: "",
       images: [],
       tasks: [],
-      logged_id: null
+      logged_id: null,
+      user: []
     };
   },
   mounted() {
     this.logged_id = window.localStorage.getItem("logged_id");
+    firebase
+      .database()
+      .ref("/users")
+      .once("value")
+      .then(snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          for (let key in data) {
+            if (data[key].email == this.logged_id) {
+              this.user.push(data[key]);
+            }
+          }
+        }
+      });
   },
   methods: {
     onDeleteImage(index) {
@@ -103,6 +126,10 @@ export default {
       });
     },
     async onClickSend() {
+      const el = document.getElementById("arrow-clockwise");
+      if (el) {
+        el.style.display = "block";
+      }
       const params = this.message();
       this.content = "";
       if (this.images.length) {
@@ -110,6 +137,7 @@ export default {
         await Promise.all(this.tasks).then(
           response => ((listImages = response), (this.tasks = []))
         );
+        el.style.display = "none";
         this.sendHandler({ ...params, message: listImages }).then(
           () => (this.images = [])
         );
@@ -119,9 +147,19 @@ export default {
     async sendHandler(params) {
       if (params.message === "" || params.message === "\n") return;
       await this.$axios
-        .post("messages.json", JSON.stringify(params), { progress: false })
+        .post(
+          `chat-sections/${this.sectionID}/messages.json`,
+          JSON.stringify(params),
+          { progress: false }
+        )
         .then(response => {
           this.$emit("sent", params);
+          const db = firebase.database();
+          db.ref(`chat-sections/${this.sectionID}`).update({
+            unread: true,
+            sender: this.user[0].family_name,
+            seen: [this.logged_id]
+          });
         })
         .catch(err => {
           console.log(err);
@@ -131,9 +169,7 @@ export default {
       return {
         message: this.content,
         created_at: new Date(),
-        chat_section: this.sectionID,
-        user: this.logged_id,
-        status: 1
+        user: this.logged_id
       };
     }
   }

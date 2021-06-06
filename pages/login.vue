@@ -9,7 +9,7 @@
         />
         Sign in with Google
       </button>
-      <button @click="login()">
+      <button @click="login('facebook')">
         <b-icon icon="facebook" class="mr-2"></b-icon>
         Sign in with Facebook
       </button>
@@ -92,18 +92,38 @@ export default {
     // this.getRealtimeUpdate();
   },
   methods: {
-    async login() {
-      const provider = new firebase.auth.GoogleAuthProvider();
+    async login(type) {
+      // firebase
+      //   .database()
+      //   .ref()
+      //   .child("/users")
+      //   .get()
+      //   .then(snapshot => {
+      //     console.log(snapshot.val());
+      //   });
+      if (type) {
+        var provider = new firebase.auth.FacebookAuthProvider();
+      } else {
+        var provider = new firebase.auth.GoogleAuthProvider();
+      }
+
       this.isLoading = true;
       await firebase
         .auth()
         .signInWithPopup(provider)
         .then(({ additionalUserInfo }) => {
-         this.$axios.post("users.json", additionalUserInfo.profile).then(()=>{
-           window.localStorage.setItem("logged_id", additionalUserInfo.profile.email)
-         })
+          if (additionalUserInfo.isNewUser) {
+            this.$axios.post("users.json", additionalUserInfo.profile);
+          }
+          window.localStorage.setItem(
+            "logged_id",
+            additionalUserInfo.profile.email
+          );
+          this.$router.push("/");
         })
-        .catch(error => {});
+        .catch(error => {
+          console.log(error);
+        });
       this.isLoading = false;
     },
     signOut() {
@@ -128,7 +148,7 @@ export default {
         .onSnapshot(doc => {
           console.log(doc);
         });
-    },
+    }
     // onCreate() {
     //   (this.formText.header = "Sign up"),
     //     (this.formText.button = "Sign up"),
@@ -146,7 +166,7 @@ export default {
     //         .dispatch("onSubmit", { ...this.form, vm: this })
     //         .then(response => {
     //           if (response) {
-                
+
     //           }
     //         });
     // },

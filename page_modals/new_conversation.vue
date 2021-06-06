@@ -89,7 +89,7 @@
               'd-flex align-items-center mb-2'
             ]"
           >
-            <b-img rounded="circle" :src="`${friend.picture}`" fluid alt="" />
+            <b-img style="width: 3rem" rounded="circle" :src="`${friend.picture}`" fluid alt="" />
             <h5 class="font-weight-bold ml-2">
               {{ `${friend.name}` }}
             </h5>
@@ -146,7 +146,7 @@ export default {
       }
       const listId = this.friends
         .filter(item => item.selected == true)
-        .map(item => item.id);
+        .map(item => item.email);
       listId.push(this.logged_id);
       await this.$axios
         .get("chat-sections.json", { progress: false })
@@ -161,6 +161,7 @@ export default {
                 this.chatSection.push({ ...value, request_id: key });
                 break;
               }
+              console.log(difference);
             }
           }
         });
@@ -185,16 +186,6 @@ export default {
       const listUsers = this.friends.filter(item => item.selected === true);
       const users = listUsers.map(item => item.email);
       users.push(this.logged_id);
-      const chatRef = firebase.firestore().collection("chat_sections");
-      chatRef
-        .add({
-          users: users.join(","),
-          name: listUsers.map(item => item.family_name).join(", "),
-          created_at: new Date(),
-          created_by: this.logged_id
-        })
-        .then(docRef => console.log("Document written with ID: " + docRef.id))
-        .catch(error => console.log("Something went wrong."));
       return await this.$axios.post(
         "/chat-sections.json",
         JSON.stringify({

@@ -2,7 +2,7 @@
   <div class="handler d-flex flex-column">
     <h3 class="font-weight-bold">Notifications</h3>
     <div class="d-flex flex-column">
-      <h4 v-if="pendingAcept.length" class="font-weight-bold">Today</h4>
+      <h4 v-if="pendingAccept.length" class="font-weight-bold">Today</h4>
       <div v-if="isLoading" class="content d-flex my-3">
         <b-skeleton width="57px" height="50px" type="avatar"></b-skeleton>
         <div style="width: 70%" class="ml-3 mt-1">
@@ -36,16 +36,14 @@
 
       <div
         class="content d-flex"
-        v-for="(user, index) in pendingAcept"
+        v-for="(user, index) in pendingAccept"
         :key="index"
       >
-        <b-avatar size="3rem"></b-avatar>
+        <b-avatar size="3rem" :src="`${user.picture}`"></b-avatar>
         <div class="notify ml-3">
           <div class="d-flex">
             <p>
-              <span class="font-weight-bold">{{
-                `${user.name.firstName} ${user.name.lastName}`
-              }}</span>
+              <span class="font-weight-bold">{{ `${user.name}` }}</span>
               sent you a friend request.
             </p>
             <b-button v-b-toggle="`collapse-${index}`" class="btn-light-grey">
@@ -53,63 +51,10 @@
             </b-button>
           </div>
           <b-collapse :id="`collapse-${index}`" class="collapse-btn mb-2">
-            <button class="mr-3" @click="accept(user, 'today', index)">
+            <button class="mr-3" @click="accept(user)">
               Accept
             </button>
-            <button @click="reject()">Reject</button>
-          </b-collapse>
-        </div>
-      </div>
-    </div>
-
-    <div class="d-flex flex-column">
-      <h4 v-if="pendingYesterday.length" class="font-weight-bold">Yesterday</h4>
-      <div v-if="isLoading" class="content d-flex my-3">
-        <b-skeleton width="57px" height="50px" type="avatar"></b-skeleton>
-        <div style="width: 70%" class="ml-3 mt-1">
-          <b-skeleton animation="wave" width="100%"></b-skeleton>
-          <b-skeleton animation="wave" class="mt-2" width="55%"></b-skeleton>
-        </div>
-        <b-button class="btn-light-grey">
-          <b-icon icon="three-dots"></b-icon>
-        </b-button>
-      </div>
-      <div v-if="isLoading" class="content d-flex my-3">
-        <b-skeleton width="57px" height="50px" type="avatar"></b-skeleton>
-        <div style="width: 70%" class="ml-3 mt-1">
-          <b-skeleton animation="wave" width="100%"></b-skeleton>
-          <b-skeleton animation="wave" class="mt-2" width="55%"></b-skeleton>
-        </div>
-        <b-button class="btn-light-grey">
-          <b-icon icon="three-dots"></b-icon>
-        </b-button>
-      </div>
-      <div
-        class="content d-flex"
-        v-for="(user, index) in pendingYesterday"
-        :key="index"
-      >
-        <b-avatar size="3rem"></b-avatar>
-        <div class="notify ml-3">
-          <div class="d-flex">
-            <p>
-              <span class="font-weight-bold">{{
-                `${user.name.firstName} ${user.name.lastName}`
-              }}</span>
-              sent you a friend request.
-            </p>
-            <b-button
-              v-b-toggle="`collapse-yd-${index}`"
-              class="btn-light-grey"
-            >
-              <b-icon icon="three-dots"></b-icon>
-            </b-button>
-          </div>
-          <b-collapse :id="`collapse-yd-${index}`" class="collapse-btn mb-2">
-            <button class="mr-3" @click="accept(user, 'yesterday', index)">
-              Accept
-            </button>
-            <button>Reject</button>
+            <button @click="reject(user)">Reject</button>
           </b-collapse>
         </div>
       </div>
@@ -118,67 +63,66 @@
 </template>
 
 <script>
+import firebase from "firebase/app";
 export default {
+  props: ["user"],
   data() {
     return {
-      pendingAcept: [],
+      pendingAccept: [],
       logged_id: null,
-      isLoading: false,
-      pendingYesterday: [],
-      currentUserRequestId: null,
-      currentUserId: null
+      isLoading: false
     };
   },
   async mounted() {
-    this.isLoading = true;
     this.logged_id = window.localStorage.getItem("logged_id");
-    const baseUser = [];
-    const users = [];
-
-    const request_id = await this.$axios.get(`users.json`, { progress: false }).then(response => {
-      let temp;
-      for (let i in response.data) {
-        if (response.data[i].email !== this.logged_id) {
-          users.push({ ...response.data[i], request_id: i });
-        } else {
-          temp = i;
-          baseUser.push(response.data[i]);
-        }
-      }
-      return temp;
-    });
-    this.currentUserRequestId = request_id;
-    this.currentUserId = baseUser[0].email;
-    const today = [];
-    const yesterday = [];
-    for (let index in baseUser[0].requests) {
-      let temp = users.filter(
-        user => user.email === baseUser[0].requests[index].request_from
-      );
-      today.push({ ...temp[0], delete_id: index });
-    }
-
-    this.isLoading = false;
-    this.pendingAcept = today;
-    this.pendingYesterday = yesterday;
-    this.isLoading = false;
+    this.getData();
   },
   methods: {
-    async accept(user, from, index) {
-      await this.$axios.post(`users/${user.request_id}/friends.json`, {
-        uid: this.currentUserId
-      });
-      await this.$axios
-        .post(`users/${this.currentUserRequestId}/friends.json`, {
-          uid: user.email
-        })
-        .then(res => {
-          from === "today" && this.pendingAcept.splice(index, 1);
-          from === "yesterday" && this.pendingYesterday.splice(index, 1);
+    getData() {
+      this.isLoading = true;
+      firebase
+        .database()
+        .ref("users/" + this.user.request_id + "/friends")
+        .on("value", snapshot => {
+          const pendingAccept = [];
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            for (let key in data) {
+              if (data[key].status === 0 && data[key].from != this.logged_id) {
+                pendingAccept.push({ ...data[key], data_request: key });
+              }
+            }
+            this.isLoading = false;
+            this.pendingAccept = pendingAccept;
+            console.log(pendingAccept);
+          } else {
+            this.isLoading = false;
+            this.pendingAccept = [];
+          }
         });
-      this.$axios.delete(
-        `users/${this.currentUserRequestId}/requests/${user.delete_id}.json`
-      );
+    },
+    accept(user) {
+      firebase
+        .database()
+        .ref("users/" + this.user.request_id + "/friends/" + user.data_request)
+        .update({
+          status: 1
+        });
+      firebase
+        .database()
+        .ref("users/" + user.request_id + "/friends/" + user.data_request)
+        .update({
+          status: 1
+        });
+    }, reject(user){
+      firebase
+        .database()
+        .ref("users/" + this.user.request_id + "/friends/" + user.data_request)
+        .remove();
+      firebase
+        .database()
+        .ref("users/" + user.request_id + "/friends/" + user.data_request)
+        .remove();
     }
   }
 };

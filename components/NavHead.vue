@@ -78,6 +78,8 @@
   </b-navbar>
 </template>
 <script>
+import firebase from "firebase/app";
+
 import profile from "~/page_modals/profile";
 import settings from "~/page_modals/settings";
 import friends from "~/page_modals/friends";
@@ -108,10 +110,9 @@ export default {
     await this.getloggedUser();
     const search = this.$el.querySelector("#search");
     search.addEventListener("input", () => this.search(search.value));
-    // this.getNotification();
+    this.getNotification();
   },
   methods: {
-
     async search(searchText) {
       await this.$axios
         .get("chat-sections.json", { progress: false })
@@ -171,22 +172,24 @@ export default {
       this.$modal.close({ name: "modal" });
     },
     getNotification() {
-      setInterval(async () => {
-        await this.$axios
-          .get(`users/${this.logged_user[0].request_id}.json`, {
-            progress: false
-          })
-          .then(response => {
-            if (response.data.requests) {
-              let length = Object.keys(response.data.requests).length;
-              if (length) {
-                this.$el.querySelector("#noti").innerHTML = length;
-              } else {
-                this.$el.querySelector("#noti").innerHTML = "";
+      const el = this.$el.querySelector("#noti");
+      firebase
+        .database()
+        .ref(`users/${this.logged_user[0].request_id}/friends`)
+        .on("value", snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            let length = 0;
+            for (let key in data) {
+              if (data[key].status === 0 && data[key].from != this.logged_id) {
+                length++;
               }
             }
-          });
-      }, 10000);
+            el.innerHTML = length || "";
+          } else {
+            el.innerHTML = "";
+          }
+        });
     }
   }
 };

@@ -1,5 +1,5 @@
 <template>
-  <div class="side-bar">
+  <div class="side-bar" style="z-index: 100">
     <div class="side-header d-flex my-2 flex-column">
       <div class="mb-2 d-flex">
         <h4 class="ml-2 font-weight-bold">Chats</h4>
@@ -50,7 +50,7 @@
         v-for="(chat, index) in chatSections"
         :key="index"
         @click="openChatSection(chat.id)"
-        :class="[{ onActive: chat.isActive }, 'user d-flex']"
+        :class="[{ text: chat.isActive }, 'user d-flex']"
       >
         <div :ref="`section-${index}`"></div>
         <b-avatar size="3.3rem" src="/nayeon.jpg"></b-avatar>
@@ -58,8 +58,8 @@
           <h4 class="mb-0">
             {{ chat.name }}
           </h4>
-          <small class="ml-3">
-            Lorem ipsum dolor.
+          <small :class="[{ unseen: isSeen(chat.seen) }, 'ml-3']">
+            {{ getMessage(chat, index) }}
           </small>
         </div>
       </div>
@@ -68,7 +68,6 @@
 </template>
 <script>
 import firebase from "firebase/app";
-var db = firebase.firestore();
 import new_conversation from "../page_modals/new_conversation.vue";
 
 export default {
@@ -76,7 +75,8 @@ export default {
     return {
       tabIndex: 0,
       chatSections: [],
-      isLoadingSection: false
+      isLoadingSection: false,
+      seenList: []
     };
   },
   components: {
@@ -90,40 +90,39 @@ export default {
   async mounted() {
     this.logged_id = window.localStorage.getItem("logged_id");
     await this.getData();
-    this.autoLoadData();
-    this.chatSections[0] && this.openChatSection(this.chatSections[0].id);
   },
   methods: {
     async getData() {
       this.isLoadingSection = true;
-      await this.$axios
-        .get("chat-sections.json", { progress: false })
-        .then(response => {
-          const payload = [];
-          for (let index in response.data) {
-            if (response.data[index].users.includes(this.logged_id)) {
-              payload.push({ ...response.data[index], id: index });
+      firebase
+        .database()
+        .ref("chat-sections/")
+        .on("value", snapshot => {
+          if (snapshot.exists()) {
+            const payload = [];
+            const data = snapshot.val();
+            for (let index in data) {
+              if (data[index].users.includes(this.logged_id)) {
+                payload.push({ ...data[index], id: index });
+              }
             }
-            continue;
+            this.isLoadingSection = false;
+            this.chatSections = payload.reverse();
+          } else {
+            this.chatSections = [];
+            this.isLoadingSection = false;
           }
-          this.isLoadingSection = false;
-          this.chatSections = payload;
-        })
-        .catch(() => {
-          this.isLoadingSection = false;
         });
     },
-    async onCreate(payload) {
-      await this.getData();
+
+    onCreate(payload) {
+      this.openChatSection(payload[0].request_id);
       const index = this.chatSections.findIndex(
         section => section.id === payload[0].request_id
       );
       const el = this.$refs[`section-${index}`][0];
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
-      }
-      if (payload) {
-        await this.openChatSection(payload[0].request_id);
       }
     },
     async openChatSection(id) {
@@ -135,12 +134,12 @@ export default {
           item.isActive = false;
         }
       });
-      // setTimeout(() => {
-      //   const el = this.$el.getElementsByClassName("onActive")[0];
-      //   if (el) {
-      //     el.scrollIntoView({ behavior: "smooth" });
-      //   }
-      // }, 300);
+      firebase
+        .database()
+        .ref(`/chat-sections/${id}`)
+        .update({
+          seen: [...this.seenList, this.logged_id]
+        });
       await this.$axios
         .get(`/chat-sections/${id}.json`, { progress: false })
         .then(response => {
@@ -153,29 +152,25 @@ export default {
           console.log(err);
         });
     },
-    /**
-     * Load on new conversation created
-     */
-    autoLoadData() {
-      setInterval(async () => {
-        let initLength = this.chatSections.length;
-        let temp = [];
-        await this.$axios
-          .get("chat-sections.json", { progress: false })
-          .then(({ data }) => {
-            for (let index in data) {
-              if (data[index].users.includes(this.logged_id)) {
-                temp.push({ ...data[index], id: index });
-              }
-              continue;
-            }
-          });
-        if (temp.length > initLength) {
-          let index = temp.length - initLength;
-          let object = temp.splice(Math.max(temp.length - index), 1);
-          this.chatSections.unshift(...object);
+    getMessage(chat, index) {
+      if (chat.messages) {
+        let newData = [];
+        for (let [key, value] of Object.entries(chat.messages)) {
+          newData.push({ ...value });
         }
-      }, 10000);
+        const result = newData[newData.length - 1].message;
+        if (Array.isArray(result)) {
+          return chat.sender + " đã gửi " + result.length + " hình ảnh.";
+        }
+        return chat.sender + ": " + result;
+      }
+    },
+    isSeen(list = []) {
+      if (list.includes(this.logged_id)) {
+        return false;
+      }
+      this.seenList = list;
+      return true;
     }
   }
 };
@@ -238,5 +233,9 @@ export default {
 }
 .onActive {
   background-color: #c6e3ff;
+}
+.unseen {
+  color: #41b883 !important;
+  font-weight: 600;
 }
 </style>
