@@ -74,7 +74,7 @@ export default {
     };
   },
   async mounted() {
-    this.logged_id = window.localStorage.getItem("logged_id");
+    this.logged_id = this.$auth.user.email
     this.getData();
   },
   methods: {
@@ -114,7 +114,8 @@ export default {
         .update({
           status: 1
         });
-    }, reject(user){
+    },
+    reject(user) {
       firebase
         .database()
         .ref("users/" + this.user.request_id + "/friends/" + user.data_request)

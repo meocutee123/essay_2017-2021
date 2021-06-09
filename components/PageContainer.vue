@@ -3,14 +3,20 @@
     <div class="side-bar">
       <slot name="sidebar"></slot>
     </div>
-    <div class="chat-area">
+    <div class="chat-area" @click="onClickOutside">
       <slot />
     </div>
   </div>
 </template>
 
 <script>
-export default {};
+export default {
+  methods: {
+    onClickOutside() {
+      $nuxt.$emit("closeModal");
+    }
+  }
+};
 </script>
 
 <style lang="scss" scoped>

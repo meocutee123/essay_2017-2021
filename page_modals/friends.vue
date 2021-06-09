@@ -114,7 +114,7 @@ export default {
     };
   },
   async mounted() {
-    this.logged_id = window.localStorage.getItem("logged_id");
+    this.logged_id = this.$auth.user.email;
     this.getFriends();
   },
   methods: {

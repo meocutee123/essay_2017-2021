@@ -9,10 +9,6 @@
         />
         Sign in with Google
       </button>
-      <button @click="login('facebook')">
-        <b-icon icon="facebook" class="mr-2"></b-icon>
-        Sign in with Facebook
-      </button>
     </div>
     <div v-if="isLoading" class="overlay">
       <div class="spinner"></div>
@@ -69,23 +65,7 @@ export default {
   layout: "empty",
   data() {
     return {
-      users: [],
-      isLoading: false,
-      isDisabled: false,
-      isSignUp: false,
-      formText: {
-        header: "Sign in",
-        button: "Sign in"
-      },
-      form: {
-        name: {
-          firstName: "",
-          lastName: ""
-        },
-        email: "",
-        password: "",
-        confirmPassword: ""
-      }
+      isLoading: false
     };
   },
   mounted() {
@@ -93,37 +73,8 @@ export default {
   },
   methods: {
     async login(type) {
-      // firebase
-      //   .database()
-      //   .ref()
-      //   .child("/users")
-      //   .get()
-      //   .then(snapshot => {
-      //     console.log(snapshot.val());
-      //   });
-      if (type) {
-        var provider = new firebase.auth.FacebookAuthProvider();
-      } else {
-        var provider = new firebase.auth.GoogleAuthProvider();
-      }
-
       this.isLoading = true;
-      await firebase
-        .auth()
-        .signInWithPopup(provider)
-        .then(({ additionalUserInfo }) => {
-          if (additionalUserInfo.isNewUser) {
-            this.$axios.post("users.json", additionalUserInfo.profile);
-          }
-          window.localStorage.setItem(
-            "logged_id",
-            additionalUserInfo.profile.email
-          );
-          this.$router.push("/");
-        })
-        .catch(error => {
-          console.log(error);
-        });
+      this.$auth.loginWith('google')
       this.isLoading = false;
     },
     signOut() {

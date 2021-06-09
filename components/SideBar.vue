@@ -1,5 +1,5 @@
 <template>
-  <div class="side-bar" style="z-index: 100">
+  <div class="side-bar">
     <div class="side-header d-flex my-2 flex-column">
       <div class="mb-2 d-flex">
         <h4 class="ml-2 font-weight-bold">Chats</h4>
@@ -20,7 +20,7 @@
           type="text"
           placeholder="Search Messenger"
           class="search-chats w-100"
-          @keyup.enter="test()"
+          @input="test($event.target.value)"
         />
       </div>
     </div>
@@ -49,16 +49,26 @@
       <div
         v-for="(chat, index) in chatSections"
         :key="index"
+        :id="`section-${index}`"
         @click="openChatSection(chat.id)"
-        :class="[{ text: chat.isActive }, 'user d-flex']"
+        :class="['user d-flex align-items-center']"
       >
         <div :ref="`section-${index}`"></div>
-        <b-avatar size="3.3rem" src="/nayeon.jpg"></b-avatar>
+        <b-avatar-group size="3rem" style="position: relative">
+          <b-avatar
+            v-for="(avt, index02) in chat.avatar.slice(0, 2)"
+            :key="index02"
+            :src="`${avt}`"
+          ></b-avatar>
+          <span class="numbers">{{
+            chat.avatar.length == 2 ? "" : "+ " + (chat.avatar.length - 2)
+          }}</span>
+        </b-avatar-group>
         <div>
           <h4 class="mb-0">
             {{ chat.name }}
           </h4>
-          <small :class="[{ unseen: isSeen(chat.seen) }, 'ml-3']">
+          <small :class="[{ unseen: isSeen(chat.seen) }]">
             {{ getMessage(chat, index) }}
           </small>
         </div>
@@ -88,10 +98,17 @@ export default {
     });
   },
   async mounted() {
-    this.logged_id = window.localStorage.getItem("logged_id");
+    this.logged_id = this.$auth.user.email;
     await this.getData();
   },
   methods: {
+    test(searchText = ""){
+      if(!searchText.length) this.getData()
+      const regex = new RegExp(`${searchText}`, "g");
+      this.chatSections = this.chatSections.filter(item => {
+        return item.name.toLowerCase().match(regex)
+      })
+    },
     async getData() {
       this.isLoadingSection = true;
       firebase
@@ -99,7 +116,7 @@ export default {
         .ref("chat-sections/")
         .on("value", snapshot => {
           if (snapshot.exists()) {
-            const payload = [];
+            let payload = [];
             const data = snapshot.val();
             for (let index in data) {
               if (data[index].users.includes(this.logged_id)) {
@@ -114,7 +131,6 @@ export default {
           }
         });
     },
-
     onCreate(payload) {
       this.openChatSection(payload[0].request_id);
       const index = this.chatSections.findIndex(
@@ -127,11 +143,13 @@ export default {
     },
     async openChatSection(id) {
       this.isDefaultView = false;
-      this.chatSections.forEach(item => {
+      this.chatSections.forEach((item, index) => {
         if (item.id === id) {
-          item.isActive = true;
+          document.getElementById(`section-${index}`).classList.add("onActive");
         } else {
-          item.isActive = false;
+          document
+            .getElementById(`section-${index}`)
+            .classList.remove("onActive");
         }
       });
       firebase
@@ -140,29 +158,35 @@ export default {
         .update({
           seen: [...this.seenList, this.logged_id]
         });
-      await this.$axios
-        .get(`/chat-sections/${id}.json`, { progress: false })
-        .then(response => {
+      firebase
+        .database()
+        .ref(`/chat-sections/${id}`)
+        .once("value")
+        .then(snapshot => {
           this.$emit(
             "openChatSection",
-            Object.assign({}, response.data, { id: id })
+            Object.assign({}, snapshot.val(), { id: id })
           );
-        })
-        .catch(err => {
-          console.log(err);
         });
     },
     getMessage(chat, index) {
       if (chat.messages) {
-        let newData = [];
+        let data = [];
         for (let [key, value] of Object.entries(chat.messages)) {
-          newData.push({ ...value });
+          data.push({ ...value });
         }
-        const result = newData[newData.length - 1].message;
+        const lastItem = data[data.length - 1];
+        if (lastItem.status === 0) {
+          if (this.logged_id === lastItem.user) {
+            return "You unsent a message.";
+          }
+          return `${lastItem.name} unsent a message.`;
+        }
+        const result = lastItem.message;
         if (Array.isArray(result)) {
-          return chat.sender + " đã gửi " + result.length + " hình ảnh.";
+          return chat.sender + " sent " + result.length + " photo(s).";
         }
-        return chat.sender + ": " + result;
+        return chat.sender + ": " + result + ".";
       }
     },
     isSeen(list = []) {
@@ -186,7 +210,7 @@ export default {
     box-sizing: border-box;
     .user {
       margin: 0.5rem;
-      padding: 1em 1em;
+      padding: 1em 0em 1em 0.5em;
       transition: 0.5s;
       border-radius: 1rem;
       position: relative;
@@ -200,9 +224,18 @@ export default {
       }
       div {
         h4 {
-          margin-left: 16px;
+          align-self: center;
+          margin-left: 2.2rem;
           font-weight: bold;
-          max-width: 200px;
+          max-width: 150px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        small {
+          display: inline-block;
+          margin-left: 2.2rem;
+          max-width: 150px;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -237,5 +270,10 @@ export default {
 .unseen {
   color: #41b883 !important;
   font-weight: 600;
+}
+.numbers {
+  position: absolute;
+  right: -1.7rem;
+  top: 25%;
 }
 </style>

@@ -10,7 +10,7 @@
       </div>
       <div class="d-flex selected-preview">
         <div class="mr-2" v-for="(item, index) in friends" :key="index">
-          <span v-if="item.selected">{{ item.name.family_name }}</span>
+          <span v-if="item.selected">{{ item.family_name }}</span>
         </div>
       </div>
       <h6>Suggested</h6>
@@ -89,7 +89,13 @@
               'd-flex align-items-center mb-2'
             ]"
           >
-            <b-img style="width: 3rem" rounded="circle" :src="`${friend.picture}`" fluid alt="" />
+            <b-img
+              style="width: 3rem"
+              rounded="circle"
+              :src="`${friend.picture}`"
+              fluid
+              alt=""
+            />
             <h5 class="font-weight-bold ml-2">
               {{ `${friend.name}` }}
             </h5>
@@ -98,9 +104,14 @@
         <b-col
           cols="12"
           class="d-flex justify-content-center align-items-center mt-2"
-          ><b-button v-if="!isDisabled" variant="success" @click="close()"
-            >Continute
-          </b-button>
+          ><button
+            class="custom-btn"
+            v-if="!isDisabled"
+            variant="success"
+            @click="close()"
+          >
+            Continute
+          </button>
           <b-icon
             v-else
             icon="arrow-clockwise"
@@ -130,9 +141,8 @@ export default {
     };
   },
   async mounted() {
-    this.logged_id = window.localStorage.getItem("logged_id");
+    this.logged_id = this.$auth.user.email;
     await this.getUsers();
-    this.search();
   },
   methods: {
     async newGroup() {},
@@ -148,10 +158,13 @@ export default {
         .filter(item => item.selected == true)
         .map(item => item.email);
       listId.push(this.logged_id);
-      await this.$axios
-        .get("chat-sections.json", { progress: false })
-        .then(({ data }) => {
-          if (data !== null) {
+      firebase
+        .database()
+        .ref("chat-sections")
+        .once("value")
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
             for (let [key, value] of Object.entries(data)) {
               const sections = value.users.split(",");
               let difference = sections
@@ -161,38 +174,71 @@ export default {
                 this.chatSection.push({ ...value, request_id: key });
                 break;
               }
-              console.log(difference);
             }
           }
         });
     },
     async getUsers() {
-      this.isLoading = true;
-      await this.$axios
-        .get("users.json", { progress: false })
-        .then(response => {
-          const users = [];
-          for (let [key, value] of Object.entries(response.data)) {
-            if (value.email !== this.logged_id) {
-              users.push({ ...value, request_id: key, selected: false });
+      const listFriends = [];
+      const users = [];
+      firebase
+        .database()
+        .ref("users")
+        .once("value")
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            for (let key in data) {
+              if (data[key].email === this.logged_id) {
+                listFriends.push(data[key].friends);
+              } else {
+                users.push({ ...data[key], selected: false, request_id: key });
+              }
             }
           }
-          this.isLoading = false;
-          this.values = users;
+          this.loadUser(listFriends, users);
         });
-      this.isLoading = false;
+    },
+    loadUser(list, users) {
+      const ids = [];
+      for (let key in list) {
+        for (let j in list[key]) {
+          ids.push(list[key][j].email);
+        }
+      }
+      const temp = [];
+      users.forEach(item => {
+        if (ids.includes(item.email)) {
+          temp.push(item);
+        }
+      });
+      this.values = temp;
+      this.search();
     },
     async newConversation() {
       const listUsers = this.friends.filter(item => item.selected === true);
       const users = listUsers.map(item => item.email);
       users.push(this.logged_id);
-      return await this.$axios.post(
-        "/chat-sections.json",
-        JSON.stringify({
-          users: users.join(","),
-          name: listUsers.map(item => item.family_name).join(", ")
-        })
-      );
+      let avatars = [this.$auth.user.picture || "https://picsum.photos/200"];
+
+      let test = listUsers.map(item => {
+        if (item.picture) {
+          return item.picture;
+        }
+        return "https://picsum.photos/200";
+      });
+      avatars = avatars.concat(test);
+      return new Promise(resolve => {
+        firebase
+          .database()
+          .ref("chat-sections")
+          .push({
+            users: users.join(","),
+            name: listUsers.map(item => item.family_name).join(", "),
+            avatar: avatars
+          })
+          .then(({ key }) => resolve(key));
+      });
     },
     async close() {
       this.isDisabled = true;
@@ -201,14 +247,17 @@ export default {
         this.$bvModal.hide("newConversation");
         return;
       }
-      await this.newConversation().then(response => {
-        this.chatSection.push({ request_id: response.data.name });
+      await this.newConversation().then(key => {
+        this.chatSection.push({ request_id: key });
         this.$emit("onCreate", this.chatSection);
       });
       this.$bvModal.hide("newConversation");
       this.isDisabled = false;
     },
-    search(value) {
+    search(value = "") {
+      if (value === "") {
+        this.friends = this.values;
+      }
       const result = [];
       this.friends = this.values.map(item => item);
       this.friends.forEach(user => {
@@ -297,5 +346,14 @@ h3 {
     outline: none;
     border: none;
   }
+}
+.custom-btn {
+  outline: none;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 1rem;
+  background: #329a4c;
+  color: #000;
+  font-weight: bold;
 }
 </style>

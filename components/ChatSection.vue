@@ -7,7 +7,7 @@
       ]"
     >
       <div class="d-flex align-items-center">
-        <h2 id="title">{{ sectionData.name }}</h2>
+        <h2 id="title">{{ chats.name }}</h2>
         <b-icon
           style="cursor: pointer"
           @click="changeTitle(sectionData)"
@@ -39,6 +39,17 @@
           <span @click="onSearch()"
             ><b-icon icon="search" scale="1rem"></b-icon> Find</span
           >
+          |
+          <export-excel
+            :data="messages"
+            :fields="fields"
+            :worksheet="sectionData.name"
+            :name="`${new Date().toISOString()}${sectionData.id}.xls`"
+            class="d-inline-block ml-2"
+          >
+            <b-icon class="mr-1" icon="cloud-arrow-down" scale="1.2rem"></b-icon
+            >Export</export-excel
+          >
         </p>
         <b-modal id="paticipants" scrollable hide-footer hide-header>
           <paticipants :sectionID="sectionData.id" />
@@ -65,11 +76,14 @@
           <span><b-skeleton animation="wave" width="300px"></b-skeleton></span>
         </div>
         <div v-else class="greetings text-center p-2">
-          <b-avatar
-            src="https://placekitten.com/300/300"
-            size="6rem"
-          ></b-avatar>
-          <h3>{{ sectionData.name }}</h3>
+          <b-avatar-group size="3rem" class="d-flex justify-content-center">
+            <b-avatar
+              v-for="(avt, index02) in chats.avatar"
+              :key="index02"
+              :src="`${avt}`"
+            ></b-avatar>
+          </b-avatar-group>
+          <h3>{{ chats.name }}</h3>
           <span @click="scrollToElement()"
             >Now you can start conversation together</span
           >
@@ -116,6 +130,7 @@
           </div>
           <div
             :key="index"
+            :id="`message-${index}`"
             :class="
               `conversations d-flex align-items-${
                 content.user === logged_id ? 'end ml-auto' : 'start'
@@ -123,54 +138,67 @@
             "
           >
             <div class="content">
-              <div
-                class="message"
-                :style="
-                  content.user === logged_id
-                    ? { 'background-color': '#41b883' }
-                    : { 'background-color': '#fcbf49' }
-                "
-              >
-                <b-row v-if="Array.isArray(content.message)">
-                  <b-col
-                    cols="6"
-                    v-for="(src, index) in content.message"
-                    :key="index"
-                  >
-                    <img
-                      :src="`${src}`"
-                      class="m-1"
-                      alt=""
-                      style="border-radius: 5px;
+              <template v-if="!content.status">
+                <div class="unsent">
+                  {{
+                    $auth.user.email === content.user
+                      ? "You unsent a message"
+                      : content.name + " unsent a message"
+                  }}
+                </div>
+              </template>
+              <template v-else>
+                <div
+                  class="message"
+                  :style="
+                    content.user === logged_id
+                      ? { 'background-color': '#41b883' }
+                      : { 'background-color': '#fcbf49' }
+                  "
+                >
+                  <b-row v-if="Array.isArray(content.message)">
+                    <b-col
+                      cols="6"
+                      v-for="(src, index) in content.message"
+                      :key="index"
+                    >
+                      <img
+                        :src="`${src}`"
+                        class="m-1"
+                        alt=""
+                        style="border-radius: 5px;
                              width: 160px;
                              height: 100px;
                               object-fit: cover;"
-                    />
-                  </b-col>
-                </b-row>
+                      />
+                    </b-col>
+                  </b-row>
 
-                <span v-else>{{ content.message }}</span>
-              </div>
-
-              <div
-                class="actions"
-                :style="
-                  content.user === logged_id
-                    ? { left: '-20px' }
-                    : { right: '-50px' }
-                "
-              >
-                <b-icon
-                  v-if="content.user === logged_id"
-                  icon="three-dots"
-                ></b-icon>
-                <div
-                  v-if="content.user === logged_id"
-                  class="action d-flex flex-column"
-                >
-                  <span @click="onDelete(content.id, index)">Delete</span>
+                  <span v-else>{{ content.message }}</span>
                 </div>
-              </div>
+
+                <div
+                  class="actions"
+                  :style="
+                    content.user === logged_id
+                      ? { left: '-20px' }
+                      : { right: '-50px' }
+                  "
+                >
+                  <b-icon
+                    v-if="content.user === logged_id"
+                    icon="three-dots"
+                  ></b-icon>
+                  <div
+                    v-if="content.user === logged_id"
+                    class="action d-flex flex-column"
+                  >
+                    <span @click="onDelete(content.id)" style="font-size: 13px"
+                      >Remove</span
+                    >
+                  </div>
+                </div>
+              </template>
             </div>
             <div
               :class="[
@@ -332,15 +360,24 @@ export default {
       slide: 0,
       sliding: null,
       messages: [],
+      json_meta: [
+        [
+          {
+            key: "charset",
+            value: "utf-8"
+          }
+        ]
+      ],
       images: [],
       logged_id: null,
       isLoadingGallery: false,
       isLoadingConversation: false,
-      scrolled: false
+      scrolled: false,
+      chats: []
     };
   },
   async mounted() {
-    this.logged_id = window.localStorage.getItem("logged_id");
+    this.logged_id = this.$auth.user.email;
     this.getData();
   },
   methods: {
@@ -364,7 +401,24 @@ export default {
       });
 
       if (value) {
-        this.$swal.fire(`You entered ${value}`);
+        const index = this.messages.findIndex(item => {
+          const regex = new RegExp(`${value}`, "g");
+          if (Array.isArray(item.message)) {
+            return;
+          }
+          console.log(item.message);
+          return item.message.match(regex);
+        });
+        if (index == -1) {
+          this.$swal.fire(`No message match`);
+          return;
+        }
+        setTimeout(() => {
+          const el = document.getElementById(`message-${index}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth" });
+          }
+        }, 200);
       }
     },
     async getGallery() {
@@ -394,6 +448,17 @@ export default {
       this.isLoadingConversation = true;
       let temp;
       let newDate = true;
+      firebase
+        .database()
+        .ref("chat-sections/" + this.sectionData.id)
+        .on("value", snapshot => {
+          this.chats = [];
+          if (snapshot.exists()) {
+            this.chats = snapshot.val();
+          } else {
+            this.chats = [];
+          }
+        });
       firebase
         .database()
         .ref("chat-sections/" + this.sectionData.id + "/messages")
@@ -426,15 +491,14 @@ export default {
           }
         });
     },
-    onDelete(id, index) {
-      this.messages.splice(index, 1);
-      this.$axios.patch(
-        `/messages/${id}.json`,
-        {
-          status: 0
-        },
-        { progress: false }
-      );
+    onDelete(id) {
+      firebase
+        .database()
+        .ref(`chat-sections/${this.sectionData.id}/messages/${id}`)
+        .update({
+          status: 0,
+          name: this.$auth.user.family_name
+        });
     },
     async changeTitle({ id }) {
       this.$swal
@@ -467,8 +531,7 @@ export default {
                   `Something went wrong: ${error}`
                 );
               });
-          },
-          allowOutsideClick: () => !Swal.isLoading()
+          }
         })
         .then(result => {
           if (result.isConfirmed) {
@@ -485,10 +548,26 @@ export default {
   },
   computed: {
     getParticipants() {
-      if (this.sectionData.users) {
-        return this.sectionData.users.split(",").length;
+      if (this.chats.users) {
+        return this.chats.users.split(",").length;
       }
-      return 1;
+      return "Loading";
+    },
+    fields() {
+      return {
+        created_at: "created_at",
+        status: "status",
+        created_by: "user",
+        content: {
+          field: "message",
+          callback: value => {
+            if (Array.isArray(value)) {
+              return "Images: " + value.join(", ");
+            }
+            return value;
+          }
+        }
+      };
     }
   },
   watch: {
@@ -683,11 +762,21 @@ section {
   .active {
     transform: translateX(0);
   }
+  .unsent {
+    padding: 4px 5px;
+    background: #ebebeb;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
   .blinkActive {
     width: calc(100% - 300px) !important;
   }
   .chat-header-active {
     width: calc(100% - 300px);
+  }
+  .d-inline-block:hover {
+    cursor: pointer;
+    color: #35495e;
   }
 }
 </style>

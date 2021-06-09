@@ -23,7 +23,7 @@
         ></b-form-input>
       </b-input-group>
       <div
-        style="z-index: 1000;position: absolute; color: #273849; background: #06d6a0; top: 3.3rem; width: 200px; border-radius: .5rem"
+        style="z-index: 1000;position: absolute; color: #273849; background: rgb(37 218 171); top: 3.3rem; width: 220px; border-radius: .5rem"
         id="htmlOut"
       ></div>
     </div>
@@ -32,9 +32,9 @@
         <b-avatar
           variant="danger"
           size="2rem"
-          :src="`${logged_user[0] && logged_user[0].picture}`"
+          :src="`${$auth.user.picture || 'https://placekitten.com/300/300'}`"
         ></b-avatar
-        ><span>{{ logged_user[0] && logged_user[0].family_name }}</span>
+        ><span>{{ $auth.user.family_name }}</span>
       </div>
       <b-button
         pill
@@ -106,38 +106,49 @@ export default {
     });
   },
   async mounted() {
-    this.logged_id = window.localStorage.getItem("logged_id");
+    this.logged_id = this.$auth.user.email;
     await this.getloggedUser();
     const search = this.$el.querySelector("#search");
     search.addEventListener("input", () => this.search(search.value));
-    this.getNotification();
   },
   methods: {
     async search(searchText) {
-      await this.$axios
-        .get("chat-sections.json", { progress: false })
-        .then(({ data }) => {
-          let section = [];
-          for (let key in data) {
-            section.push({ ...data[key], request_id: key });
+      firebase
+        .database()
+        .ref("chat-sections")
+        .once("value")
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            let section = [];
+            for (let key in data) {
+              if (data[key].users.includes(this.logged_id)) {
+                section.push({ ...data[key], request_id: key });
+              }
+            }
+            let matches = section.filter(item => {
+              const regex = new RegExp(`${searchText}`, "g");
+              return item.name.toLowerCase().match(regex);
+            });
+            if (searchText.length === 0) {
+              matches = [];
+              this.$el.querySelector("#htmlOut").innerHTML = "";
+            }
+            this.outputHTML(matches);
           }
-          let matches = section.filter(item => {
-            const regex = new RegExp(`^${searchText}`, "gi");
-            return item.name.match(regex);
-          });
-          if (searchText.length === 0) {
-            matches = [];
-            this.$el.querySelector("#htmlOut").innerHTML = "";
-          }
-          this.outputHTML(matches);
         });
     },
     outputHTML(matches) {
       if (matches.length > 0) {
         const html = matches
           .map(
-            item => ` <div class="f-flex flex-column p-2" data-value="${item.request_id}">
-          <div style="border-bottom: 1px solid #f8f9fa; padding: 0 5px; cursor: pointer ">${item.name}</div>
+            item => ` 
+          <div class="f-flex flex-column p-2" data-value="${item.request_id}">
+          <div style="padding: 0 5px; cursor: pointer; font-weight: bold">
+                <img style="width: 2rem; border-radius: 50%"
+                  src="${item.avatar[0]}"/>
+              ${item.name}
+            </div>
           </div>
         
         `
@@ -156,13 +167,21 @@ export default {
       this.$el.querySelector("#htmlOut").innerHTML = "";
     },
     async getloggedUser() {
-      await this.$axios.get(`users.json`).then(({ data }) => {
-        for (let i in data) {
-          if (data[i].email === this.logged_id) {
-            this.logged_user.push({ ...data[i], request_id: i });
+      firebase
+        .database()
+        .ref("users")
+        .once("value")
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            for (let key in data) {
+              if (data[key].email === this.logged_id) {
+                this.logged_user.push({ ...data[key], request_id: key });
+                this.getNotification();
+              }
+            }
           }
-        }
-      });
+        });
     },
     openModal(name) {
       this.$modal.open({ name: "modal" });

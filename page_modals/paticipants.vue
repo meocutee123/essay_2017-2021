@@ -7,9 +7,12 @@
         <input
           type="text"
           placeholder="Search for friends"
-          class="search-chats w-100"
+          class="search-chats"
           @input="search($event.target.value)"
         />
+        <button class="btn-light-grey ml-auto" @click="onSave()">
+          <b-icon icon="arrow-right-circle" aria-hidden="true"></b-icon>
+        </button>
       </div>
       <template v-for="(people, index) in temp">
         <b-form-checkbox-group
@@ -84,7 +87,7 @@
             v-if="participant.email !== logged_id"
             icon="x"
             scale="2.3rem"
-            @click="removePaticipant(participant.request_id, index)"
+            @click="removePaticipant(index)"
           ></b-icon>
         </div>
       </div>
@@ -93,6 +96,7 @@
 </template>
 
 <script>
+import firebase from "firebase/app";
 export default {
   props: ["sectionID"],
   data() {
@@ -102,16 +106,21 @@ export default {
       outnumbers: [],
       logged_id: null,
       isLoading: false,
-      selected: [], temp: []
+      selected: [],
+      temp: []
     };
   },
   async mounted() {
     this.isLoading = true;
-    this.logged_id = window.localStorage.getItem("logged_id");
-    await this.$axios
-      .get(`chat-sections/${this.sectionID}.json`, { progress: false })
-      .then(response => {
-        this.listUsers = response.data.users;
+    this.logged_id = this.$auth.user.email;
+    firebase
+      .database()
+      .ref(`chat-sections/${this.sectionID}/users`)
+      .on("value", snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          this.listUsers = data;
+        }
       });
     await this.getParticipants();
     this.isLoading = false;
@@ -134,46 +143,67 @@ export default {
             this.participants.splice(index, 1);
             const users = [];
             this.participants.forEach(user => users.push(user.email));
-            this.$axios
-              .patch(
-                `/chat-sections/${this.sectionID}.json`,
-                JSON.stringify({
-                  users: users.join(",")
-                })
-              )
-              .then(res => console.log(res));
+            firebase
+              .database()
+              .ref(`/chat-sections/${this.sectionID}`)
+              .update({
+                users: users.join(",")
+              });
           }
         });
     },
     async getParticipants() {
-       this.isLoading = true;
       const participants = [];
+      const outnumbers = [];
       const listId = this.listUsers.split(",");
-      await this.$axios.get(`users/.json`, { progress: false }).then(res => {
-        for (let [, value] of Object.entries(res.data)) {
-          if (listId.includes(value.email)) {
-            participants.push({ ...value });
-          } else {
-            this.outnumbers.push(value);
+      this.isLoading = true;
+      firebase
+        .database()
+        .ref("users")
+        .once("value")
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            for (let key in data) {
+              if (listId.includes(data[key].email)) {
+                participants.push({ ...data[key] });
+              } else {
+                outnumbers.push(data[key]);
+              }
+            }
           }
-        }
-      });
-       this.isLoading = false;
-      this.participants = participants;
+          this.isLoading = false;
+          this.participants = participants;
+          this.temp = outnumbers;
+        });
     },
     async addParicipant() {
+      this.participants = [];
+      await this.getParticipants();
       this.$bvModal.show("modal-add");
     },
     search(searchTex) {
-      const temp =JSON.parse(JSON.stringify(this.participants))
+      const temp = JSON.parse(JSON.stringify(this.outnumbers));
       let matches = temp.filter(user => {
         const regex = new RegExp(`^${searchTex}`, "gi");
         return user.name.match(regex) || user.email.match(regex);
       });
       if (searchTex.length == 0) {
+        this.temp = temp;
         return;
       }
       this.temp = matches;
+    },
+    onSave() {
+      const params = this.participants.map(user => user.email);
+      firebase
+        .database()
+        .ref(`chat-sections/${this.sectionID}`)
+        .update({
+          users: params.concat(this.selected).join(",")
+        });
+      this.$bvModal.hide("modal-add");
+      this.getParticipants();
     }
   }
 };

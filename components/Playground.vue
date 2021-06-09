@@ -84,21 +84,7 @@ export default {
     };
   },
   mounted() {
-    this.logged_id = window.localStorage.getItem("logged_id");
-    firebase
-      .database()
-      .ref("/users")
-      .once("value")
-      .then(snapshot => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          for (let key in data) {
-            if (data[key].email == this.logged_id) {
-              this.user.push(data[key]);
-            }
-          }
-        }
-      });
+    this.logged_id = this.$auth.user.email;
   },
   methods: {
     onDeleteImage(index) {
@@ -107,6 +93,7 @@ export default {
     },
     onFileUpload(e) {
       let output = this.$refs.file;
+      if(!e.target.files[0]) return
       output.src = URL.createObjectURL(e.target.files[0]);
       this.images.push(output.src);
       this.tasks.push(this.uploadFile(e));
@@ -142,34 +129,33 @@ export default {
           () => (this.images = [])
         );
       }
-      await this.sendHandler(params);
+      this.sendHandler(params);
     },
     async sendHandler(params) {
       if (params.message === "" || params.message === "\n") return;
-      await this.$axios
-        .post(
-          `chat-sections/${this.sectionID}/messages.json`,
-          JSON.stringify(params),
-          { progress: false }
-        )
-        .then(response => {
-          this.$emit("sent", params);
-          const db = firebase.database();
-          db.ref(`chat-sections/${this.sectionID}`).update({
-            unread: true,
-            sender: this.user[0].family_name,
-            seen: [this.logged_id]
-          });
-        })
-        .catch(err => {
-          console.log(err);
+      const db = firebase.database();
+      return new Promise(resolve => {
+        db.ref(`chat-sections/${this.sectionID}/messages`).push(
+          {
+            ...params
+          },
+          () => this.$emit("sent", params)
+        );
+
+        db.ref(`chat-sections/${this.sectionID}`).update({
+          unread: true,
+          sender: this.$auth.user.family_name,
+          seen: [this.logged_id]
         });
+        resolve(true);
+      });
     },
     message() {
       return {
         message: this.content,
-        created_at: new Date(),
-        user: this.logged_id
+        user: this.logged_id,
+        created_at: new Date().toISOString(),
+        status: 1
       };
     }
   }

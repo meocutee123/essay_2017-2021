@@ -19,24 +19,12 @@ export default {
     };
   },
   mounted() {
-    this.id = window.localStorage.getItem("logged_id");
   },
   methods: {
     signOut() {
-      localStorage.removeItem("token");
+      this.$auth.logout()
       localStorage.removeItem("logged_id");
       this.$router.push("/login");
-      this.$axios
-        .get("login-users.json", { progress: false })
-        .then(({ data }) => {
-          for (let [key, value] of Object.entries(data)) {
-            if (value.user === this.id) {
-              this.$axios.delete(`login-users/${key}.json`, {
-                progress: false
-              });
-            }
-          }
-        });
     }
   }
 };

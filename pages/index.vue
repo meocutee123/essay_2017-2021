@@ -1,7 +1,7 @@
 <template>
   <client-only>
     <page-container>
-      <template v-slot:sidebar>
+      <template v-slot:sidebar style="z-index: 100">
         <SideBar @openChatSection="openChatSection" />
       </template>
 
@@ -61,7 +61,7 @@
 import _chat from "~/components/ChatSection";
 import _default from "~/components/Default";
 export default {
-  // middleware: "auth",
+  middleware: "auth-user",
   components: {
     "chat-section": _chat,
     "default-section": _default
@@ -77,7 +77,7 @@ export default {
       this.sectionData = payload;
       this.activeComponent = "chat-section";
       this.$refs.chatSection.isActive = false;
-    }
+    },
   }
 };
 </script>

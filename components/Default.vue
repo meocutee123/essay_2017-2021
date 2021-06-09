@@ -1,5 +1,5 @@
 <template>
-  <div class="preload" @click="onClickOutside">
+  <div class="preload" >
     <img class="airplane" src="airplane.png" alt="" />
     <img class="cloud1" src="cloud.png" alt="" />
     <img class="cloud2" src="cloud.png" alt="" />
@@ -13,9 +13,7 @@ export default {
     return {};
   },
   methods: {
-    onClickOutside() {
-      $nuxt.$emit("closeModal");
-    }
+
   }
 };
 </script>
@@ -30,10 +28,11 @@ export default {
   justify-content: center;
   align-items: center;
   position: relative;
+z-index: -3;
   .airplane {
     width: 220px;
     animation: airplane 1s ease-in-out infinite alternate;
-    z-index: 10;
+    z-index: -1;
   }
   h3{
     position: absolute;
@@ -48,6 +47,7 @@ export default {
     height: 100px;
     position: absolute;
     right: 0%;
+    z-index: -2;
   }
   .cloud1 {
     top: 25%;

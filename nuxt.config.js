@@ -28,7 +28,8 @@ export default {
     "@/plugins/modals/v-modal.js",
     "@/plugins/vco.js",
     "@/plugins/firebase.js",
-    { src: "@plugins/confirm-box.js", mode: "client" }
+    { src: "@plugins/confirm-box.js", mode: "client" },
+    { src: "@plugins/excel-export.js", mode: "client" },
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -50,7 +51,8 @@ export default {
     "bootstrap-vue/nuxt",
     // https://go.nuxtjs.dev/axios
     "@nuxtjs/axios",
-    "vue-sweetalert2/nuxt"
+    "vue-sweetalert2/nuxt",
+    '@nuxtjs/auth'
   ],
   bootstrapVue: {
     // Install the `IconsPlugin` plugin (in addition to `BootstrapVue` plugin)
@@ -62,5 +64,14 @@ export default {
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
-  build: {}
+  build: {},
+  auth: {
+    // Options
+    strategies: {
+      google: {
+        client_id: '102660532491-23otvcsedjv2qm9gcjrgt2s8g1pakl2r.apps.googleusercontent.com',
+        codeChallengeMethod: ""
+      },
+    }
+  }
 };
