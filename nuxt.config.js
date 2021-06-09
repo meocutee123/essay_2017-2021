@@ -1,4 +1,6 @@
 export default {
+  mode: 'spa',
+  target: 'static',
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
     title: "NextTREND",
@@ -72,6 +74,6 @@ export default {
         client_id: '102660532491-23otvcsedjv2qm9gcjrgt2s8g1pakl2r.apps.googleusercontent.com',
         codeChallengeMethod: ""
       },
-    }
+    },
   }
 };

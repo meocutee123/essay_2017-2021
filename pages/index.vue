@@ -58,10 +58,11 @@
 </template>
 
 <script>
+
 import _chat from "~/components/ChatSection";
 import _default from "~/components/Default";
 export default {
-  middleware: "auth-user",
+  middleware: "auth",
   components: {
     "chat-section": _chat,
     "default-section": _default

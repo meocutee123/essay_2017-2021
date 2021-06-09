@@ -74,7 +74,8 @@ export default {
   methods: {
     async login(type) {
       this.isLoading = true;
-      this.$auth.loginWith('google')
+      await this.$auth.loginWith("google");
+
       this.isLoading = false;
     },
     signOut() {
@@ -82,10 +83,7 @@ export default {
       firebase
         .auth()
         .signOut()
-        .then(() => {
-          // Sign-out successful.
-          console.log("Sign-out successful");
-        })
+        .then(() => {})
         .catch(error => {
           // An error happened.
         });
@@ -100,30 +98,6 @@ export default {
           console.log(doc);
         });
     }
-    // onCreate() {
-    //   (this.formText.header = "Sign up"),
-    //     (this.formText.button = "Sign up"),
-    //     (this.isSignUp = true);
-    // },
-    // onSignUp() {
-    //   (this.formText.header = "Sign in"),
-    //     (this.formText.button = "Sign in"),
-    //     (this.isSignUp = false);
-    // },
-    // async onSubmit() {
-    //   this.isSignUp
-    //     ? this.doSignUp()
-    //     : await this.$store
-    //         .dispatch("onSubmit", { ...this.form, vm: this })
-    //         .then(response => {
-    //           if (response) {
-
-    //           }
-    //         });
-    // },
-    // async doSignUp() {
-    //   await this.$store.dispatch("onCreateUser", { ...this.form, vm: this });
-    // }
   }
 };
 </script>

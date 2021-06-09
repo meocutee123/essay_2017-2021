@@ -137,7 +137,8 @@
               } flex-column p-2 `
             "
           >
-            <div class="content">
+            <div class="content d-flex flex-column">
+              <small>{{content.name}}</small>
               <template v-if="!content.status">
                 <div class="unsent">
                   {{
@@ -211,7 +212,8 @@
               }}</small
               ><b-avatar
                 :class="`${content.user === logged_id} ? 'to' : 'from'`"
-                size="1rem"
+                size="2rem"
+                :src="content.picture"
               ></b-avatar>
             </div>
           </div>
@@ -667,10 +669,10 @@ section {
             display: inline-block;
             // layout
             position: relative;
-            max-width: 30em;
+            max-width: 400px;
             margin-bottom: 0.7rem !important;
             // looks
-
+            overflow-wrap: break-word;
             padding: 0.5em 1em;
             font-size: 1em;
             border-radius: 1rem;
@@ -678,10 +680,10 @@ section {
           .actions {
             position: absolute;
             transform: translate(-50%, -50%);
-            top: 40%;
+            top: 57%;
             .action {
               position: absolute;
-              top: 40%;
+              top: 57%;
               transform: translate(-50%, -50%);
               display: none !important;
               padding: 0.2em;

@@ -155,7 +155,9 @@ export default {
         message: this.content,
         user: this.logged_id,
         created_at: new Date().toISOString(),
-        status: 1
+        status: 1,
+        picture: this.$auth.user.picture,
+        name: this.$auth.user.name
       };
     }
   }

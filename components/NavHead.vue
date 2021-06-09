@@ -107,11 +107,38 @@ export default {
   },
   async mounted() {
     this.logged_id = this.$auth.user.email;
-    await this.getloggedUser();
+    this.checkExists();
     const search = this.$el.querySelector("#search");
     search.addEventListener("input", () => this.search(search.value));
   },
   methods: {
+    checkExists() {
+      firebase
+        .database()
+        .ref("/users")
+        .once("value")
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            let isExist = false;
+            for (let key in data) {
+              if (data[key].email === this.$auth.user.email) {
+                isExist = true;
+              }
+            }
+            isExist ? this.getloggedUser() : this.save()
+          } else {
+            this.save();
+          }
+        });
+    },
+    save() {
+      firebase
+        .database()
+        .ref("/users")
+        .push(this.$auth.user)
+        .then(() => this.getloggedUser());
+    },
     async search(searchText) {
       firebase
         .database()
@@ -169,7 +196,7 @@ export default {
     async getloggedUser() {
       firebase
         .database()
-        .ref("users")
+        .ref("/users")
         .once("value")
         .then(snapshot => {
           if (snapshot.exists()) {
@@ -177,9 +204,10 @@ export default {
             for (let key in data) {
               if (data[key].email === this.logged_id) {
                 this.logged_user.push({ ...data[key], request_id: key });
-                this.getNotification();
               }
             }
+            console.log(this.logged_user);
+            this.getNotification();
           }
         });
     },

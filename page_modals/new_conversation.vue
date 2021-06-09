@@ -241,7 +241,7 @@ export default {
       });
     },
     async close() {
-      this.isDisabled = true;
+      if(this.friends.filter(item => item.selected === true).length === 0) return
       if (this.chatSection.length) {
         this.$emit("onCreate", this.chatSection);
         this.$bvModal.hide("newConversation");
