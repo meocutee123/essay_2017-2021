@@ -7,7 +7,10 @@
       ]"
     >
       <div class="d-flex align-items-center">
-        <h2 id="title">{{ chats.name }}</h2>
+        <h2 id="title" style=" max-width: 500px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;">{{ chats.name }}</h2>
         <b-icon
           style="cursor: pointer"
           @click="changeTitle(sectionData)"
@@ -138,13 +141,15 @@
             "
           >
             <div class="content d-flex flex-column">
-              <small>{{content.name}}</small>
+              <small v-if="content.user !== logged_id">{{
+                content.name
+              }}</small>
               <template v-if="!content.status">
                 <div class="unsent">
                   {{
                     $auth.user.email === content.user
-                      ? "You unsent a message"
-                      : content.name + " unsent a message"
+                      ? "You unsent a message."
+                      : content.name + " unsent a message."
                   }}
                 </div>
               </template>
@@ -175,7 +180,31 @@
                     </b-col>
                   </b-row>
 
-                  <span v-else>{{ content.message }}</span>
+                  <template v-else>
+                    <div
+                      @click="openLink(index)"
+                      class="link-preview d-flex flex-column"
+                      v-if="content.message.url"
+                    >
+                      <span>{{ content.message.text }}</span>
+                      <img
+                        style="height: 100px; object-fit: cover; border-radius: 1rem"
+                        :src="`${content.message.image}`"
+                        :alt="`${content.message.title}`"
+                      />
+                      <span class="font-weight-bold">
+                        {{ content.message.title }}
+                      </span>
+                      <a
+                        :ref="`link-${index}`"
+                        style="display: none"
+                        :href="`${content.message.url}`"
+                        target="_blank"
+                      ></a>
+                      <small>{{ content.message.url }}</small>
+                    </div>
+                    <span v-else>{{ content.message }}</span>
+                  </template>
                 </div>
 
                 <div
@@ -220,7 +249,7 @@
         </template>
         <div class="bottom"></div>
       </div>
-      <Playground :sectionID="sectionData.id" @sent="loadOnSent" />
+      <Playground :sectionID="sectionData.id" />
     </div>
     <div :class="[{ active: isActive }, 'gallery px-2']" id="gallery">
       <div class="gallery-head d-flex align-items-center">
@@ -346,7 +375,6 @@
 <script>
 import firebase from "firebase/app";
 import paticipants from "../page_modals/paticipants.vue";
-
 export default {
   components: { paticipants },
   props: {
@@ -357,6 +385,8 @@ export default {
   },
   data() {
     return {
+      user_temp: null,
+      media: [],
       isActive: false,
       defaultView: true,
       slide: 0,
@@ -378,6 +408,7 @@ export default {
       chats: []
     };
   },
+  filters: {},
   async mounted() {
     this.logged_id = this.$auth.user.email;
     this.getData();
@@ -385,9 +416,6 @@ export default {
   methods: {
     onClickOutside() {
       $nuxt.$emit("closeModal");
-    },
-    loadOnSent(params) {
-      // this.messages.push(params);
     },
     async onSearch() {
       const { value } = await this.$swal.fire({
@@ -408,7 +436,6 @@ export default {
           if (Array.isArray(item.message)) {
             return;
           }
-          console.log(item.message);
           return item.message.match(regex);
         });
         if (index == -1) {
@@ -430,6 +457,7 @@ export default {
         .ref(`chat-sections/${this.sectionData.id}/messages`)
         .on("value", snapshot => {
           const listImages = [];
+          this.media = [];
           if (snapshot.exists()) {
             const data = snapshot.val();
             for (let index in data) {
@@ -470,6 +498,9 @@ export default {
             const data = snapshot.val();
             for (let index in data) {
               let item = data[index];
+              if (!item.status) {
+                item.message = "This message has been deleted.";
+              }
               let date = new Date(item.created_at).toLocaleDateString();
               if (temp != date) {
                 newDate = true;
@@ -477,7 +508,11 @@ export default {
               } else {
                 newDate = false;
               }
-              listMessage.push({ id: index, ...item, newDate: newDate });
+              listMessage.push({
+                id: index,
+                ...item,
+                newDate: newDate
+              });
             }
             this.messages = listMessage;
             setTimeout(() => {
@@ -499,7 +534,7 @@ export default {
         .ref(`chat-sections/${this.sectionData.id}/messages/${id}`)
         .update({
           status: 0,
-          name: this.$auth.user.family_name
+          name: this.$auth.user.name
         });
     },
     async changeTitle({ id }) {
@@ -519,15 +554,13 @@ export default {
             // if(text === "") {
             //   this.$swal.showValidationMessage(`Something went wrong: ${error}`);
             // }
-            return this.$axios
-              .patch(
-                `/chat-sections/${id}.json`,
-                { name: text },
-                { progress: false }
-              )
-              .then(response => {
-                return text;
+            return firebase
+              .database()
+              .ref(`/chat-sections/${id}`)
+              .update({
+                name: text
               })
+              .then(() => text)
               .catch(error => {
                 this.$swal.showValidationMessage(
                   `Something went wrong: ${error}`
@@ -546,12 +579,15 @@ export default {
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
       }
+    },
+    openLink(index) {
+      this.$refs[`link-${index}`][0].click();
     }
   },
   computed: {
     getParticipants() {
       if (this.chats.users) {
-        return this.chats.users.split(",").length;
+        return this.chats.users.length;
       }
       return "Loading";
     },
@@ -565,6 +601,9 @@ export default {
           callback: value => {
             if (Array.isArray(value)) {
               return "Images: " + value.join(", ");
+            }
+            if (value.url) {
+              return value.text;
             }
             return value;
           }
@@ -680,7 +719,7 @@ section {
           .actions {
             position: absolute;
             transform: translate(-50%, -50%);
-            top: 57%;
+            top: 40%;
             .action {
               position: absolute;
               top: 57%;
@@ -780,5 +819,8 @@ section {
     cursor: pointer;
     color: #35495e;
   }
+}
+.link-preview:hover {
+  cursor: pointer;
 }
 </style>

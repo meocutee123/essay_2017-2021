@@ -166,7 +166,7 @@ export default {
           if (snapshot.exists()) {
             const data = snapshot.val();
             for (let [key, value] of Object.entries(data)) {
-              const sections = value.users.split(",");
+              const sections = value.users;
               let difference = sections
                 .filter(x => !listId.includes(x))
                 .concat(listId.filter(x => !sections.includes(x)));
@@ -203,7 +203,9 @@ export default {
       const ids = [];
       for (let key in list) {
         for (let j in list[key]) {
-          ids.push(list[key][j].email);
+          if (list[key][j].status === 1) {
+            ids.push(list[key][j].email);
+          }
         }
       }
       const temp = [];
@@ -233,15 +235,17 @@ export default {
           .database()
           .ref("chat-sections")
           .push({
-            users: users.join(","),
+            users: users,
             name: listUsers.map(item => item.family_name).join(", "),
-            avatar: avatars
+            avatar: avatars,
+            host: this.logged_id
           })
           .then(({ key }) => resolve(key));
       });
     },
     async close() {
-      if(this.friends.filter(item => item.selected === true).length === 0) return
+      if (this.friends.filter(item => item.selected === true).length === 0)
+        return;
       if (this.chatSection.length) {
         this.$emit("onCreate", this.chatSection);
         this.$bvModal.hide("newConversation");

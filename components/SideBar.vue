@@ -186,7 +186,7 @@ export default {
         if (Array.isArray(result)) {
           return chat.sender + " sent " + result.length + " photo(s).";
         }
-        return chat.sender + ": " + result + ".";
+        return chat.sender + ": " + (result.text || result) + ".";
       }
     },
     isSeen(list = []) {

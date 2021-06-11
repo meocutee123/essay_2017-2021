@@ -206,7 +206,6 @@ export default {
                 this.logged_user.push({ ...data[key], request_id: key });
               }
             }
-            console.log(this.logged_user);
             this.getNotification();
           }
         });

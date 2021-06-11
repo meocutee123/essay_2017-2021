@@ -14,7 +14,7 @@
           <b-icon icon="arrow-right-circle" aria-hidden="true"></b-icon>
         </button>
       </div>
-      <template v-for="(people, index) in temp">
+      <template v-for="(people, index) in matches">
         <b-form-checkbox-group
           v-model="selected"
           class="d-flex mt-2 align-items-center"
@@ -31,7 +31,7 @@
     </b-modal>
     <h3>Paticipants</h3>
     <div class="d-flex flex-column">
-      <div v-if="isLoading" class="people p-3 d-flex flex-column">
+      <div v-if="isLoading" class="people px-3 d-flex flex-column">
         <div class="person d-flex">
           <b-skeleton width="70px" height="70px" type="avatar"></b-skeleton>
           <div class="d-flex flex-column p-2">
@@ -42,7 +42,7 @@
           </div>
         </div>
       </div>
-      <div v-if="isLoading" class="people p-3 d-flex flex-column">
+      <div v-if="isLoading" class="people px-3 d-flex flex-column">
         <div class="person d-flex">
           <b-skeleton width="70px" height="70px" type="avatar"></b-skeleton>
           <div class="d-flex flex-column p-2">
@@ -53,7 +53,7 @@
           </div>
         </div>
       </div>
-      <div v-if="isLoading" class="people p-3 d-flex flex-column">
+      <div v-if="isLoading" class="people px-3 d-flex flex-column">
         <div class="person d-flex">
           <b-skeleton width="70px" height="70px" type="avatar"></b-skeleton>
           <div class="d-flex flex-column p-2">
@@ -83,14 +83,17 @@
               participant.email !== logged_id ? "Someone's wife" : "You"
             }}</span>
           </div>
-          <b-icon
-            v-if="participant.email !== logged_id"
-            icon="x"
-            scale="2.3rem"
-            @click="removePaticipant(index)"
-          ></b-icon>
+          <template v-if="host === logged_id">
+            <b-icon
+              v-if="participant.email !== logged_id"
+              icon="x"
+              scale="2.3rem"
+              @click="removePaticipant(index)"
+            ></b-icon>
+          </template>
         </div>
       </div>
+      <button class="leave" @click="selfLeave()">Leave conversation</button>
     </div>
   </div>
 </template>
@@ -107,30 +110,31 @@ export default {
       logged_id: null,
       isLoading: false,
       selected: [],
-      temp: []
+      temp: [],
+      host: null,
+      matches: []
     };
   },
   async mounted() {
-    this.isLoading = true;
     this.logged_id = this.$auth.user.email;
     firebase
       .database()
-      .ref(`chat-sections/${this.sectionID}/users`)
+      .ref(`chat-sections/${this.sectionID}`)
       .on("value", snapshot => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          this.listUsers = data;
+          this.host = data.host;
+          this.listUsers = data.users;
         }
       });
     await this.getParticipants();
-    this.isLoading = false;
   },
   methods: {
-    async removePaticipant(index) {
+    async removePaticipant(index, text = "Are you sure?") {
       this.$swal
         .fire({
           icon: "warning",
-          titleText: "Are you sure?",
+          titleText: text,
           timer: "5000",
           allowOutsideClick: true,
           allowEscapeKey: true,
@@ -141,21 +145,25 @@ export default {
         .then(res => {
           if (res.isConfirmed) {
             this.participants.splice(index, 1);
-            const users = [];
-            this.participants.forEach(user => users.push(user.email));
+
             firebase
               .database()
               .ref(`/chat-sections/${this.sectionID}`)
               .update({
-                users: users.join(",")
-              });
+                users: [...this.participants.map(item => item.email)]
+              })
+              .then(
+                () =>
+                  text !== "Are you sure?" &&
+                  (location.reload(), this.$bvModal.hide("paticipants"))
+              );
           }
         });
     },
     async getParticipants() {
       const participants = [];
-      const outnumbers = [];
-      const listId = this.listUsers.split(",");
+      let outnumbers = [];
+      this.participants = [];
       this.isLoading = true;
       firebase
         .database()
@@ -165,16 +173,20 @@ export default {
           if (snapshot.exists()) {
             const data = snapshot.val();
             for (let key in data) {
-              if (listId.includes(data[key].email)) {
+              if (this.listUsers.includes(data[key].email)) {
                 participants.push({ ...data[key] });
-              } else {
-                outnumbers.push(data[key]);
+              }
+              if (data[key].email === this.logged_id) {
+                outnumbers = data[key].friends;
               }
             }
           }
           this.isLoading = false;
           this.participants = participants;
-          this.temp = outnumbers;
+          this.temp = Object.keys(outnumbers)
+            .map(item => outnumbers[item])
+            .filter(item => item.status === 1);
+          this.search();
         });
     },
     async addParicipant() {
@@ -182,17 +194,26 @@ export default {
       await this.getParticipants();
       this.$bvModal.show("modal-add");
     },
-    search(searchTex) {
-      const temp = JSON.parse(JSON.stringify(this.outnumbers));
-      let matches = temp.filter(user => {
-        const regex = new RegExp(`^${searchTex}`, "gi");
-        return user.name.match(regex) || user.email.match(regex);
-      });
-      if (searchTex.length == 0) {
-        this.temp = temp;
-        return;
+    search(searchTex = "") {
+      const listID = this.participants.map(item => item.email);
+      const regex = new RegExp(`^${searchTex}`, "gi");
+      let matches = [];
+      if (searchTex.length === 0) {
+        this.temp.forEach(item => {
+          if (!listID.includes(item.email)) {
+            matches.push(item);
+          }
+        });
+      } else {
+        this.temp.forEach(user => {
+          if (!listID.includes(user.email)) {
+            if (user.name.match(regex) || user.email.match(regex)) {
+              matches.push(user);
+            }
+          }
+        });
       }
-      this.temp = matches;
+      this.matches = matches;
     },
     onSave() {
       const params = this.participants.map(user => user.email);
@@ -200,10 +221,19 @@ export default {
         .database()
         .ref(`chat-sections/${this.sectionID}`)
         .update({
-          users: params.concat(this.selected).join(",")
+          users: [...this.selected, ...params]
+        })
+        .then(() => {
+          this.selected = [];
+          this.$bvModal.hide("modal-add");
+          this.getParticipants();
         });
-      this.$bvModal.hide("modal-add");
-      this.getParticipants();
+    },
+    selfLeave() {
+      const index = this.participants.findIndex(
+        item => this.logged_id === item.email
+      );
+      this.removePaticipant(index, "Leave this conversation?");
     }
   }
 };
@@ -265,5 +295,16 @@ export default {
   border-radius: 1.5rem;
   font-size: 0.9rem;
   padding: 0.4rem 0 0.4rem 28px;
+}
+.leave {
+  outline: none;
+  border: none;
+  background: #41b883;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  transition: 0.3s;
+  &:active {
+    transform: scale(0.9);
+  }
 }
 </style>

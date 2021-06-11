@@ -31,7 +31,7 @@ export default {
     "@/plugins/vco.js",
     "@/plugins/firebase.js",
     { src: "@plugins/confirm-box.js", mode: "client" },
-    { src: "@plugins/excel-export.js", mode: "client" },
+    { src: "@plugins/excel-export.js", mode: "client" }
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -62,7 +62,7 @@ export default {
   },
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
-    baseURL: "https://getting-started-613bf-default-rtdb.firebaseio.com/"
+    baseURL: "https://api.linkpreview.net/"
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build

@@ -49,7 +49,7 @@
           placeholder="Type a message"
           @focus="onFocus = true"
           @blur="onfocus = false"
-          v-model="content"
+          v-model.trim="content"
           @keyup.enter.exact="onClickSend()"
         ></textarea>
         <b-icon
@@ -93,7 +93,7 @@ export default {
     },
     onFileUpload(e) {
       let output = this.$refs.file;
-      if(!e.target.files[0]) return
+      if (!e.target.files[0]) return;
       output.src = URL.createObjectURL(e.target.files[0]);
       this.images.push(output.src);
       this.tasks.push(this.uploadFile(e));
@@ -113,12 +113,27 @@ export default {
       });
     },
     async onClickSend() {
+      const params = this.message();
+      this.content = "";
       const el = document.getElementById("arrow-clockwise");
       if (el) {
         el.style.display = "block";
       }
-      const params = this.message();
-      this.content = "";
+      const regex = /(?:(?:https?|ftp|file):\/\/|www\.|ftp\.)(?:\([-A-Z0-9+&@#\/%=~_|$?!:,.]*\)|[-A-Z0-9+&@#\/%=~_|$?!:,.])*(?:\([-A-Z0-9+&@#\/%=~_|$?!:,.]*\)|[A-Z0-9+&@#\/%=~_|$])/gim;
+
+      if (params.message.match(regex)) {
+        await this.$axios
+          .get(
+            `?key=7ec772f6a66894f854b1b2c29372e8d6&q=${
+              params.message.slice(0, 4) !== "http"
+                ? "https://" + params.message
+                : params.message
+            }`
+          )
+          .then(
+            ({ data }) => (params.message = { ...data, text: params.message })
+          );
+      }
       if (this.images.length) {
         let listImages = [];
         await Promise.all(this.tasks).then(
@@ -138,8 +153,7 @@ export default {
         db.ref(`chat-sections/${this.sectionID}/messages`).push(
           {
             ...params
-          },
-          () => this.$emit("sent", params)
+          }
         );
 
         db.ref(`chat-sections/${this.sectionID}`).update({
