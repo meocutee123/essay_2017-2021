@@ -1,6 +1,9 @@
 <template>
   <div class="settings">
-    <div class="power d-flex justify-content-center align-items-center" @click="signOut()">
+    <div
+      class="power d-flex justify-content-center align-items-center"
+      @click="signOut()"
+    >
       <b-icon icon="power" scale="10rem" color="#d8dbe0"></b-icon>
     </div>
     <p>Sign out</p>
@@ -9,11 +12,19 @@
 
 <script>
 export default {
-  methods:{
-    signOut(){
-      localStorage.removeItem('token')
-      localStorage.removeItem('loged-id')
-      this.$router.push('/login')
+  data() {
+    return {
+      users: [],
+      id: null
+    };
+  },
+  mounted() {
+  },
+  methods: {
+    signOut() {
+      this.$auth.logout()
+      localStorage.removeItem("logged_id");
+      this.$router.push("/login");
     }
   }
 };

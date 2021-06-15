@@ -6,107 +6,257 @@
         { 'chat-header-active': isActive }
       ]"
     >
-      <div class="d-flex">
-        <h2>{{ sectionData.name }}</h2>
-        <div
+      <div class="d-flex align-items-center">
+        <h2
+          id="title"
+          style=" max-width: 500px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;"
+        >
+          {{ chats.name }}
+        </h2>
+        <b-icon
+          style="cursor: pointer"
+          @click="changeTitle(sectionData)"
+          class="h6 ml-4"
+          icon="pencil-fill"
+        ></b-icon>
+        <!-- <div
           class="ml-auto actions d-flex justify-content-between align-items-center"
         >
           <b-icon icon="telephone" scale="1.3rem"></b-icon>
           <b-icon icon="camera-video" scale="1.3rem"></b-icon>
           <b-icon icon="person-plus" scale="1.3rem"></b-icon>
-        </div>
+        </div> -->
       </div>
       <div class="detail d-flex justify-content-between align-items-center">
         <p>
-          <span v-b-modal.paticipants>13 paticipants</span> |
-          <span @click="isActive = !isActive"
+          <span v-b-modal.paticipants>{{
+            getParticipants + " participants"
+          }}</span>
+          |
+          <span
+            @click="
+              isActive = !isActive;
+              getGallery();
+            "
             ><b-icon icon="journal-album" scale="1rem"></b-icon> Gallery</span
           >
           |
-          <span><b-icon icon="search" scale="1rem"></b-icon> Find</span>
+          <span @click="onSearch()"
+            ><b-icon icon="search" scale="1rem"></b-icon> Find</span
+          >
+          |
+          <export-excel
+            :data="messages"
+            :fields="fields"
+            :worksheet="sectionData.name"
+            :name="`${new Date().toISOString()}${sectionData.id}.xls`"
+            class="d-inline-block ml-2"
+          >
+            <b-icon class="mr-2" icon="cloud-arrow-down" scale="1.2rem"></b-icon
+            >Export</export-excel
+          >
         </p>
         <b-modal id="paticipants" scrollable hide-footer hide-header>
           <paticipants :sectionID="sectionData.id" />
         </b-modal>
       </div>
     </div>
-    <div :class="['blink d-flex flex-column', { blinkActive: isActive }]">
+    <div
+      id="chats"
+      :class="['blink d-flex flex-column', { blinkActive: isActive }]"
+    >
       <div class="chat-section mt-auto px-3">
-        <div class="greetings text-center p-2">
-          <b-avatar
-            src="https://placekitten.com/300/300"
-            size="6rem"
-          ></b-avatar>
-          <h3>Nguyễn Tuấn Nghĩa</h3>
-          <span>Now you can start conversation together</span>
+        <div
+          v-if="isLoadingConversation"
+          class="greetings d-flex flex-column align-items-center p-2"
+        >
+          <b-skeleton width="100px" height="100px" type="avatar"></b-skeleton>
+          <h3 class="mt-2">
+            <b-skeleton
+              height="1.7rem"
+              animation="wave"
+              width="230px"
+            ></b-skeleton>
+          </h3>
+          <span><b-skeleton animation="wave" width="300px"></b-skeleton></span>
+        </div>
+        <div v-else class="greetings text-center p-2">
+          <b-avatar-group size="3rem" class="d-flex justify-content-center">
+            <b-avatar
+              v-for="(avt, index02) in chats.avatar"
+              :key="index02"
+              :src="`${avt}`"
+            ></b-avatar>
+          </b-avatar-group>
+          <h3>{{ chats.name }}</h3>
+          <span @click="scrollToElement()"
+            >Now you can start conversation together</span
+          >
+        </div>
+        <div
+          v-if="isLoadingConversation"
+          class="
+              conversations d-flex align-items-end ml-auto flex-column p-2 
+            "
+        >
+          <b-skeleton animation="wave" width="85%"></b-skeleton>
+          <b-skeleton animation="wave" width="55%"></b-skeleton>
+          <b-skeleton animation="wave" width="70%"></b-skeleton>
+        </div>
+        <div
+          v-if="isLoadingConversation"
+          class="
+              conversations d-flex align-items-start flex-column p-2 
+            "
+        >
+          <b-skeleton animation="wave" width="85%"></b-skeleton>
+          <b-skeleton animation="wave" width="55%"></b-skeleton>
+          <b-skeleton animation="wave" width="70%"></b-skeleton>
+          <b-skeleton animation="wave" width="30%"></b-skeleton>
+          <b-skeleton animation="wave" width="70%"></b-skeleton>
+        </div>
+        <div
+          v-if="isLoadingConversation"
+          class="
+              conversations d-flex align-items-end ml-auto flex-column p-2 
+            "
+        >
+          <b-skeleton animation="wave" width="25%"></b-skeleton>
         </div>
         <template v-for="(content, index) in messages">
           <div
+            style="font-size: .7rem"
+            id="date"
+            class="text-muted text-center border-bottom"
+            v-if="content.newDate"
+            :key="`as-${index}`"
+          >
+            {{ new Date(content.created_at).toDateString() }}
+          </div>
+          <div
             :key="index"
+            :id="`message-${index}`"
             :class="
               `conversations d-flex align-items-${
-                content.user === loged_id ? 'end ml-auto' : 'start'
+                content.user === logged_id ? 'end ml-auto' : 'start mr-auto'
               } flex-column p-2 `
             "
           >
-            <div v-if="content.status === 1" class="content">
-              <div
-                class="message"
-                :style="
-                  content.user === loged_id
-                    ? { 'background-color': '#41b883' }
-                    : { 'background-color': '#fcbf49' }
-                "
-              >
-                <b-row v-if="Array.isArray(content.message)">
-                  <b-col
-                    cols="6"
-                    v-for="(src, index) in content.message"
-                    :key="index"
-                  >
-                    <img
-                      :src="`${src}`"
-                      class="m-1"
-                      alt=""
-                      style="border-radius: 5px;
+            <div class="content d-flex flex-column">
+              <small v-if="content.user !== logged_id">{{
+                content.name
+              }}</small>
+              <template v-if="!content.status">
+                <div class="unsent">
+                  {{
+                    $auth.user.email === content.user
+                      ? "You unsent a message."
+                      : content.name + " unsent a message."
+                  }}
+                </div>
+              </template>
+              <template v-else>
+                <div
+                  class="message"
+                  :style="[
+                    content.user === logged_id
+                      ? { 'background-color': '#41b883' }
+                      : { 'background-color': '#fcbf49' },
+                    { width: 'max-content' }
+                  ]"
+                >
+                  <b-row v-if="Array.isArray(content.message)">
+                    <b-col
+                      cols="6"
+                      v-for="(src, index) in content.message"
+                      :key="index"
+                    >
+                      <img
+                        @click="openImage(src)"
+                        :src="`${src}`"
+                        class="m-1"
+                        alt=""
+                        style="border-radius: 5px;
                              width: 160px;
                              height: 100px;
-                              object-fit: cover;"
-                    />
-                  </b-col>
-                </b-row>
+                              object-fit: cover; cursor: pointer"
+                      />
+                    </b-col>
+                  </b-row>
 
-                <span v-else>{{ content.message }}</span>
-              </div>
-              <div
-                class="actions"
-                :style="
-                  content.user === loged_id
-                    ? { left: '-20px' }
-                    : { right: '-50px' }
-                "
-              >
-                <b-icon
-                  v-if="content.user === loged_id"
-                  icon="three-dots"
-                ></b-icon>
-                <div
-                  v-if="content.user === loged_id"
-                  class="action d-flex flex-column"
-                >
-                  <span @click="onDelete(content.id, index)">Delete</span>
+                  <template v-else>
+                    <div
+                      @click="openLink(index)"
+                      class="link-preview d-flex flex-column"
+                      v-if="content.message.url"
+                    >
+                      <span>{{ content.message.text }}</span>
+                      <img
+                        style="height: 100px; object-fit: cover; border-radius: 1rem"
+                        :src="`${content.message.image}`"
+                        :alt="`${content.message.title}`"
+                      />
+                      <span class="font-weight-bold">
+                        {{ content.message.title }}
+                      </span>
+                      <a
+                        :ref="`link-${index}`"
+                        style="display: none"
+                        :href="`${content.message.url}`"
+                        target="_blank"
+                      ></a>
+                      <small>{{ content.message.url }}</small>
+                    </div>
+                    <div v-else>{{ content.message }}</div>
+                  </template>
                 </div>
-              </div>
+
+                <div
+                  class="actions"
+                  :style="
+                    content.user === logged_id
+                      ? { left: '-20px' }
+                      : { right: '-50px' }
+                  "
+                >
+                  <b-icon
+                    v-if="content.user === logged_id"
+                    icon="three-dots"
+                  ></b-icon>
+                  <div
+                    v-if="content.user === logged_id"
+                    class="action d-flex flex-column"
+                  >
+                    <span @click="onDelete(content.id)" style="font-size: 13px"
+                      >Remove</span
+                    >
+                  </div>
+                </div>
+              </template>
             </div>
-            <b-avatar
-              v-if="content.status === 1"
-              :class="`${content.user === loged_id} ? 'to' : 'from'`"
-              size="1rem"
-            ></b-avatar>
+            <div
+              :class="[
+                'icon-float d-flex align-items-center',
+                content.user === logged_id ? '' : 'flex-row-reverse'
+              ]"
+            >
+              <small class="mx-1">{{
+                new Date(content.created_at).toLocaleTimeString()
+              }}</small
+              ><b-avatar
+                :class="`${content.user === logged_id} ? 'to' : 'from'`"
+                size="2rem"
+                :src="content.picture"
+              ></b-avatar>
+            </div>
           </div>
         </template>
         <div class="bottom"></div>
       </div>
+      <Playground :sectionID="sectionData.id" />
     </div>
     <div :class="[{ active: isActive }, 'gallery px-2']" id="gallery">
       <div class="gallery-head d-flex align-items-center">
@@ -120,6 +270,44 @@
       </div>
       <div class="images">
         <h4 class="font-weight-bold">Images</h4>
+        <b-row class="p-2" v-if="isLoadingGallery">
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+        </b-row>
         <b-row class="p-2">
           <b-col
             v-for="(src, index) in images"
@@ -127,12 +315,50 @@
             cols="6"
             class="p-2"
           >
-            <div><img :src="`${src}`" alt="" /></div>
+            <div><img :src="`${src}`" @click="openImage(src)" alt="" /></div>
           </b-col>
         </b-row>
         <h4 class="font-weight-bold">Files</h4>
+        <b-row class="p-2" v-if="isLoadingGallery">
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+          <b-col cols="6" class="p-2">
+            <div>
+              <b-skeleton-img
+                no-aspect
+                height="8rem"
+                width="8rem"
+              ></b-skeleton-img>
+            </div>
+          </b-col>
+        </b-row>
         <b-row class="p-2">
-          <b-col cols="6" class="p-2">
+          <!-- <b-col cols="6" class="p-2">
             <div><img src="/nayeon.jpg" alt="" /></div>
           </b-col>
           <b-col cols="6" class="p-2">
@@ -146,15 +372,18 @@
           </b-col>
           <b-col cols="6" class="p-2">
             <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
+          </b-col> -->
         </b-row>
       </div>
     </div>
-    <Playground :sectionID="sectionData.id" @sent="loadOnSent" />
+    <b-modal :id="`modal-image`" centered hide-footer hide-header no-fade>
+      <b-img :src="src" fluid></b-img>
+    </b-modal>
   </section>
 </template>
 
 <script>
+import firebase from "firebase/app";
 import paticipants from "../page_modals/paticipants.vue";
 export default {
   components: { paticipants },
@@ -166,59 +395,242 @@ export default {
   },
   data() {
     return {
+      src: null,
+      user_temp: null,
+      media: [],
       isActive: false,
       defaultView: true,
       slide: 0,
       sliding: null,
       messages: [],
+      json_meta: [
+        [
+          {
+            key: "charset",
+            value: "utf-8"
+          }
+        ]
+      ],
       images: [],
-      loged_id: null
+      logged_id: null,
+      isLoadingGallery: false,
+      isLoadingConversation: false,
+      scrolled: false,
+      chats: []
     };
   },
+  filters: {},
   async mounted() {
-    this.loged_id = window.localStorage.getItem('loged_id')
+    this.logged_id = this.$auth.user.email;
     this.getData();
-    this.scrollToElement();
   },
   methods: {
     onClickOutside() {
       $nuxt.$emit("closeModal");
     },
-    loadOnSent(params) {
-      this.messages.push(params);
-      this.scrollToElement();
-    },
-    async getData() {
-      const listMessage = [];
-      const listImages = [];
-      await this.$axios.get("messages.json").then(res => {
-        for (let index in res.data) {
-          let item = res.data[index];
-          if (item.chat_section === this.sectionData.id && item.status === 1) {
-            listMessage.push({ id: index, ...item });
-            if (Array.isArray(item.message)) {
-              listImages.push(...item.message);
-            }
+    async onSearch() {
+      const { value } = await this.$swal.fire({
+        title: "Enter search term",
+        input: "text",
+        showCancelButton: true,
+        confirmButtonColor: "#41b883",
+        inputValidator: value => {
+          if (!value) {
+            return "You need to write something!";
           }
         }
-        this.messages = listMessage;
-        this.images = listImages;
       });
-      this.scrollToElement();
+
+      if (value) {
+        const index = this.messages.findIndex(item => {
+          const regex = new RegExp(`${value}`, "g");
+          if (Array.isArray(item.message)) {
+            return;
+          }
+          return item.message.match(regex);
+        });
+        if (index == -1) {
+          this.$swal.fire(`No message match`);
+          return;
+        }
+        setTimeout(() => {
+          const el = document.getElementById(`message-${index}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth" });
+          }
+        }, 200);
+      }
     },
-    onDelete(id, index) {
-      this.messages.splice(index, 1);
-      this.$axios.patch(
-        `/messages/${id}.json`,
-        JSON.stringify({
-          status: 0
+    async getGallery() {
+      this.isLoadingGallery = true;
+      firebase
+        .database()
+        .ref(`chat-sections/${this.sectionData.id}/messages`)
+        .on("value", snapshot => {
+          const listImages = [];
+          this.media = [];
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            for (let index in data) {
+              let item = data[index];
+              if (Array.isArray(item.message)) {
+                listImages.push(...item.message);
+              }
+            }
+            this.isLoadingGallery = false;
+            this.images = listImages;
+          } else {
+            this.isLoadingGallery = false;
+            this.images = [];
+          }
+        });
+    },
+    getData() {
+      this.isLoadingConversation = true;
+      let temp;
+      let newDate = true;
+      firebase
+        .database()
+        .ref("chat-sections/" + this.sectionData.id)
+        .on("value", snapshot => {
+          this.chats = [];
+          if (snapshot.exists()) {
+            this.chats = snapshot.val();
+          } else {
+            this.chats = [];
+          }
+        });
+      firebase
+        .database()
+        .ref("chat-sections/" + this.sectionData.id + "/messages")
+        .on("value", snapshot => {
+          const listMessage = [];
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            for (let index in data) {
+              let item = data[index];
+              if (!item.status) {
+                item.message = "This message has been deleted.";
+              }
+              let date = new Date(item.created_at).toLocaleDateString();
+              if (temp != date) {
+                newDate = true;
+                temp = date;
+              } else {
+                newDate = false;
+              }
+              listMessage.push({
+                id: index,
+                ...item,
+                newDate: newDate
+              });
+            }
+            this.messages = listMessage;
+            setTimeout(() => {
+              this.isLoadingConversation = false;
+              this.scrollToElement();
+            }, 300);
+          } else {
+            this.messages = [];
+            setTimeout(() => {
+              this.isLoadingConversation = false;
+              this.scrollToElement();
+            }, 300);
+          }
+        });
+    },
+    onDelete(id) {
+      firebase
+        .database()
+        .ref(`chat-sections/${this.sectionData.id}/messages/${id}`)
+        .update({
+          status: 0,
+          name: this.$auth.user.name
+        });
+    },
+    async changeTitle({ id }) {
+      this.$swal
+        .fire({
+          title: "Enter conversation name",
+          input: "text",
+          showCancelButton: true,
+          confirmButtonText: "Submit",
+          showLoaderOnConfirm: true,
+          inputValidator: value => {
+            if (!value) {
+              return "You need to write something!";
+            }
+          },
+          preConfirm: text => {
+            // if(text === "") {
+            //   this.$swal.showValidationMessage(`Something went wrong: ${error}`);
+            // }
+            return firebase
+              .database()
+              .ref(`/chat-sections/${id}`)
+              .update({
+                name: text
+              })
+              .then(() => text)
+              .catch(error => {
+                this.$swal.showValidationMessage(
+                  `Something went wrong: ${error}`
+                );
+              });
+          }
         })
-      );
+        .then(result => {
+          if (result.isConfirmed) {
+            document.querySelector("#title").innerHTML = result.value;
+          }
+        });
     },
     scrollToElement() {
       const el = this.$el.getElementsByClassName("bottom")[0];
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
+      }
+    },
+    openLink(index) {
+      this.$refs[`link-${index}`][0].click();
+    },
+    openImage(src) {
+      this.src = src;
+      this.$bvModal.show(`modal-image`);
+    }
+  },
+  computed: {
+    getParticipants() {
+      if (this.chats.users) {
+        return this.chats.users.length;
+      }
+      return "Loading";
+    },
+    fields() {
+      return {
+        created_at: "created_at",
+        status: "status",
+        created_by: "user",
+        content: {
+          field: "message",
+          callback: value => {
+            if (Array.isArray(value)) {
+              return "Images: " + value.join(", ");
+            }
+            if (value.url) {
+              return value.text;
+            }
+            return value;
+          }
+        }
+      };
+    }
+  },
+  watch: {
+    sectionData: {
+      deep: true,
+      handler() {
+        this.getData();
       }
     }
   }
@@ -284,6 +696,7 @@ section {
     width: 100%;
     position: relative;
     .chat-section {
+      overflow-x: hidden;
       position: absolute;
       width: 100%;
       bottom: 3.5rem;
@@ -294,9 +707,9 @@ section {
       .conversations {
         max-width: 400px;
         position: relative;
-        .b-avatar {
+        .icon-float {
           position: absolute;
-          bottom: 1.3rem;
+          bottom: -4px;
         }
         .to {
           right: -0.8rem;
@@ -310,10 +723,10 @@ section {
             display: inline-block;
             // layout
             position: relative;
-            max-width: 30em;
+            max-width: 400px;
             margin-bottom: 0.7rem !important;
             // looks
-
+            overflow-wrap: break-word;
             padding: 0.5em 1em;
             font-size: 1em;
             border-radius: 1rem;
@@ -324,7 +737,7 @@ section {
             top: 40%;
             .action {
               position: absolute;
-              top: 40%;
+              top: 57%;
               transform: translate(-50%, -50%);
               display: none !important;
               padding: 0.2em;
@@ -405,11 +818,24 @@ section {
   .active {
     transform: translateX(0);
   }
+  .unsent {
+    padding: 4px 5px;
+    background: #ebebeb;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
   .blinkActive {
-    width: calc(100% - 300px);
+    width: calc(100% - 300px) !important;
   }
   .chat-header-active {
     width: calc(100% - 300px);
   }
+  .d-inline-block:hover {
+    cursor: pointer;
+    color: #35495e;
+  }
+}
+.link-preview:hover {
+  cursor: pointer;
 }
 </style>

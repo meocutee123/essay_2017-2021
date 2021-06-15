@@ -7,89 +7,92 @@
       <label class="m-0 mr-2" for="search">Find: </label>
       <input id="search" type="text" />
     </div>
-    <h5 class="font-weight-bold">Suggested</h5>
-    <div v-if="isLoading" class="friends d-flex my-3">
-      <b-skeleton width="90px" height="70px" type="avatar"></b-skeleton>
-      <div style="width: 80%" class="ml-3 mt-2">
-        <b-skeleton animation="wave" width="90%"></b-skeleton>
-        <b-skeleton animation="wave" class="mt-2" width="55%"></b-skeleton>
-      </div>
-      <b-skeleton-icon
-        icon="person"
-        :icon-props="{ fontScale: 1.7 }"
-      ></b-skeleton-icon>
-    </div>
-    <div v-if="isLoading" class="friends d-flex my-3">
-      <b-skeleton width="90px" height="70px" type="avatar"></b-skeleton>
-      <div style="width: 80%" class="ml-3 mt-2">
-        <b-skeleton animation="wave" width="90%"></b-skeleton>
-        <b-skeleton animation="wave" class="mt-2" width="55%"></b-skeleton>
-      </div>
-      <b-skeleton-icon
-        icon="person"
-        :icon-props="{ fontScale: 1.7 }"
-      ></b-skeleton-icon>
-    </div>
-    <div v-if="isLoading" class="friends d-flex my-3">
-      <b-skeleton width="90px" height="70px" type="avatar"></b-skeleton>
-      <div style="width: 80%" class="ml-3 mt-2">
-        <b-skeleton animation="wave" width="90%"></b-skeleton>
-        <b-skeleton animation="wave" class="mt-2" width="55%"></b-skeleton>
-      </div>
-      <b-skeleton-icon
-        icon="person"
-        :icon-props="{ fontScale: 1.7 }"
-      ></b-skeleton-icon>
-    </div>
-    <div class="friends">
-      <div
-        class="friend d-flex p-2"
-        v-for="(person, index) in users"
-        :key="index"
-      >
-        <b-avatar size="4rem" class="mr-3" src="/bae-joohyun.png"></b-avatar>
-        <div>
-          <h4 class="font-weight-bolder">
-            {{ person.name.firstName }} {{ person.name.lastName }}
-          </h4>
-          <p class="m-0">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur,
-            reprehenderit.
-          </p>
-        </div>
-        <b-icon
-          :ref="`person-${index}`"
-          class="mt-1"
-          style="color: #41b883"
-          :icon="'person-plus-fill'"
-          scale="1.5rem"
-          @click="sendRequest(person.request_id, index)"
-        ></b-icon>
-      </div>
-    </div>
     <h5 class="font-weight-bold">Friends</h5>
+    <div v-if="isLoading" class="friends d-flex my-3">
+      <b-skeleton width="90px" height="70px" type="avatar"></b-skeleton>
+      <div style="width: 80%" class="ml-3 mt-2">
+        <b-skeleton animation="wave" width="90%"></b-skeleton>
+        <b-skeleton animation="wave" class="mt-2" width="55%"></b-skeleton>
+      </div>
+      <b-skeleton-icon
+        icon="person"
+        :icon-props="{ fontScale: 1.7 }"
+      ></b-skeleton-icon>
+    </div>
+    <div v-if="isLoading" class="friends d-flex my-3">
+      <b-skeleton width="90px" height="70px" type="avatar"></b-skeleton>
+      <div style="width: 80%" class="ml-3 mt-2">
+        <b-skeleton animation="wave" width="90%"></b-skeleton>
+        <b-skeleton animation="wave" class="mt-2" width="55%"></b-skeleton>
+      </div>
+      <b-skeleton-icon
+        icon="person"
+        :icon-props="{ fontScale: 1.7 }"
+      ></b-skeleton-icon>
+    </div>
+    <div v-if="isLoading" class="friends d-flex my-3">
+      <b-skeleton width="90px" height="70px" type="avatar"></b-skeleton>
+      <div style="width: 80%" class="ml-3 mt-2">
+        <b-skeleton animation="wave" width="90%"></b-skeleton>
+        <b-skeleton animation="wave" class="mt-2" width="55%"></b-skeleton>
+      </div>
+      <b-skeleton-icon
+        icon="person"
+        :icon-props="{ fontScale: 1.7 }"
+      ></b-skeleton-icon>
+    </div>
     <div class="friends">
       <div
-        class="friend d-flex p-2"
+        class="friend d-flex p-2 align-items-center"
         v-for="(person, index) in friends"
         :key="index"
       >
-        <b-avatar size="4rem" class="mr-3" src="/bae-joohyun.png"></b-avatar>
+        <b-avatar
+          size="3rem"
+          class="mr-3"
+          :src="`${person.picture}`"
+        ></b-avatar>
         <div>
-          <h4 class="font-weight-bolder">
-            {{ person.name.firstName }} {{ person.name.lastName }}
-          </h4>
-          <p class="m-0">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur,
-            reprehenderit.
-          </p>
+          <h5 class="font-weight-bolder mb-0">
+            {{ person.name }}
+          </h5>
+          <small v-if="person.status === 0" class="text-success">
+            "(Pending accept)</small
+          >
         </div>
         <b-icon
           class="mt-1"
+          :id="`icon-${index}`"
+          style="color: red"
+          icon="person-x-fill"
+          scale="1.5rem"
+          @click="removeFriend(person)"
+        ></b-icon>
+      </div>
+    </div>
+    <h5 class="font-weight-bold">Suggested</h5>
+    <div class="friends">
+      <div
+        class="friend d-flex p-2 align-items-center"
+        v-for="(person, index) in people"
+        :key="index"
+      >
+        <b-avatar
+          size="3rem"
+          class="mr-3"
+          :src="`${person.picture}`"
+        ></b-avatar>
+        <div>
+          <h5 class="font-weight-bolder">
+            {{ person.name }}
+          </h5>
+        </div>
+        <b-icon
+          class="mt-1 ml-2"
           style="color: #41b883"
           :icon="'person-plus-fill'"
           scale="1.5rem"
-          @click="sendRequest(person.request_id)"
+          @click="sendRequest(person)"
         ></b-icon>
       </div>
     </div>
@@ -97,50 +100,103 @@
 </template>
 
 <script>
+import firebase from "firebase/app";
 export default {
+  props: ["user"],
   data() {
     return {
       friends: [],
       people: [],
       isRequested: {},
       users: null,
-      loged_id: null,
+      logged_id: null,
       isLoading: false
     };
   },
   async mounted() {
-    this.loged_id = window.localStorage.getItem("loged_id");
-    await this.$axios.get("users.json").then(response => {
-      const users = [];
-      for (const [key, value] of Object.entries(response.data)) {
-        users.push({ ...value, request_id: key });
-      }
-      this.users = users;
-    });
-    // this.getFriends();
-    // this.getSuggested();
+    this.logged_id = this.$auth.user.email;
+    this.getFriends();
   },
   methods: {
+    getPeople(ids) {
+      firebase
+        .database()
+        .ref("users")
+        .on("value", snapshot => {
+          if (snapshot.exists()) {
+            const people = [];
+            const response = snapshot.val();
+            for (let key in response) {
+              if (
+                response[key].email != this.logged_id &&
+                !ids.includes(response[key].email)
+              ) {
+                people.push({ ...response[key], request_id: key });
+              }
+            }
+            this.isLoading = false;
+            this.people = people;
+          } else {
+            this.isLoading = false;
+            this.people = [];
+          }
+        });
+    },
     getFriends() {
-      this.people = this.users.filter(item =>
-        item.friends.includes(this.loged_id)
+      this.isLoading = true;
+      firebase
+        .database()
+        .ref("/users/" + this.user.request_id)
+        .on("value", snapshot => {
+          const friends = [];
+
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            for (let key in data.friends) {
+              friends.push({ ...data.friends[key], data_request: key });
+            }
+            const listID = friends.map(item => item.email);
+            this.isLoading = false;
+            this.friends = friends;
+            this.getPeople(listID);
+          } else {
+            this.isLoading = false;
+            this.friends = [];
+          }
+        });
+    },
+    async sendRequest(person) {
+      const db = firebase.database();
+      const key = firebase
+        .database()
+        .ref()
+        .child("users/" + this.user.request_id + "/requests/")
+        .push().key;
+
+      db.ref("users/" + this.user.request_id + "/friends/" + key).update(
+        { ...person, status: 0, from: this.logged_id, created_date: new Date() },
+        error => {
+          console.log(error);
+        }
+      );
+      db.ref("users/" + person.request_id + "/friends/" + key).update(
+        { ...this.user, status: 0, from: this.logged_id, isNew: true, created_date: new Date() },
+        error => {
+          console.log(error);
+        }
       );
     },
-    getSuggested() {
-      this.people = this.users.filter(
-        item => !item.friends.includes(this.loged_id)
-      );
-      this.people.length = 4;
-    },
-    async sendRequest(request_id, index) {
-      await this.$axios
-        .post(`users/${request_id}/requests.json`, {
-          request_from: this.loged_id,
-          type: "create",
-          status: 0,
-          time: new Date().toLocaleDateString("en-GB")
-        })
-        .then(res => {});
+    removeFriend(person) {
+      firebase
+        .database()
+        .ref(
+          "users/" + this.user.request_id + "/friends/" + person.data_request
+        )
+        .remove();
+      firebase
+        .database()
+        .ref("users/" + person.request_id + "/friends/" + person.data_request)
+        .remove();
     }
   }
 };
@@ -162,6 +218,12 @@ export default {
     padding: 0.3em;
     border-radius: 0.7em;
     transition: 0.5s;
+    position: relative;
+    .b-icon {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.3rem;
+    }
     &:hover {
       background-color: #fff7f6;
     }

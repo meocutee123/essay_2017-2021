@@ -1,186 +1,200 @@
 <template>
-  <div class="p-2">
-    <div class="ml-auto login-form">
-      <h1>{{ formText.header }}</h1>
-      <form @submit.prevent="onSubmit()">
-        <b-row v-if="isSignUp" class="pr-3">
-          <b-col>
-            <label for="first">First name: </label>
-            <b-input
-              type="text"
-              id="first"
-              v-model.trim="form.name.firstName"
-              placeholder="First name"
-            />
-          </b-col>
-          <b-col>
-            <label for="last">Last name: </label>
-            <b-input
-              type="text"
-              id="last"
-              v-model.trim="form.name.lastName"
-              placeholder="First name"
-            />
-          </b-col>
-        </b-row>
-        <b-row class="pr-3">
-          <b-col cols="12">
-            <label for="email">Email: </label>
-            <b-input
-              type="text"
-              id="email"
-              v-model.trim="form.email"
-              placeholder="Email"
-            />
-          </b-col>
-          <b-col cols="12">
-            <label for="password">Password: </label>
-            <b-input
-              type="text"
-              id="password"
-              v-model.trim="form.password"
-              placeholder="Password"
-            />
-          </b-col>
-          <b-col v-if="isSignUp" cols="12">
-            <label for="confirmPassword">Confirm password: </label>
-            <b-input
-              type="text"
-              id="confirmPassword"
-              v-model.trim="form.confirmPassword"
-              placeholder="Password"
-            />
-          </b-col>
-        </b-row>
-
-        <button type="submit" :disabled="isDisabled">
-          {{ formText.button }}
-        </button>
-        <span class="w-100" v-if="isSignUp">
-          <span @click="onSubmit()">Sign in</span>
-        </span>
-      </form>
+  <div>
+    <div class="center">
+      <button @click="login()">
+        <img
+          src="https://img-authors.flaticon.com/google.jpg"
+          alt=""
+          class="mr-2"
+        />
+        Sign in with Google
+      </button>
     </div>
-    <div class="mt-5 w-100 d-flex justify-content-around">
-      <span @click="onCreate()">Create an account</span>
-      <span
-        >Or login with
-        <b-icon class="mx-3" icon="facebook" scale="2rem"></b-icon
-        ><b-icon class="mx-3" icon="twitter" scale="2rem"></b-icon
-        ><b-icon class="mx-3" icon="instagram" scale="2rem"></b-icon
-      ></span>
+    <div v-if="isLoading" class="overlay">
+      <div class="spinner"></div>
     </div>
   </div>
+
+  <!-- <div class="ml-auto login-form">
+    <form @submit.prevent="onSubmit()">
+      <div v-if="isSignUp">
+        <input type="text" id="first" v-model.trim="form.name.firstName" />
+
+        <input type="text" id="last" v-model.trim="form.name.lastName" />
+      </div>
+
+      <input
+        type="text"
+        id="email"
+        v-model.trim="form.email"
+        placeholder="Email"
+      />
+
+      <input
+        type="text"
+        id="password"
+        v-model.trim="form.password"
+        placeholder="Password"
+      />
+
+      <div v-if="isSignUp">
+        <input
+          type="text"
+          id="confirmPassword"
+          v-model.trim="form.confirmPassword"
+        />
+      </div>
+
+      <button type="submit" :disabled="isDisabled">
+        {{ formText.button }}
+      </button>
+      <span v-if="isSignUp">
+        <span @click="onSubmit()">Sign in</span>
+      </span>
+    </form>
+
+    <div>
+      <span @click="onCreate()">Create an account</span>
+    </div>
+  </div> -->
 </template>
 
 <script>
+import firebase from "firebase/app";
 export default {
   layout: "empty",
   data() {
     return {
-      isDisabled: false,
-      isSignUp: false,
-      formText: {
-        header: "Sign in",
-        button: "Sign in"
-      },
-      form: {
-        name: {
-          firstName: "",
-          lastName: ""
-        },
-        email: "",
-        password: "",
-        confirmPassword: ""
-      }
+      isLoading: false
     };
   },
+  mounted() {
+    // this.getRealtimeUpdate();
+  },
   methods: {
-    onCreate() {
-      (this.formText.header = "Sign up"),
-        (this.formText.button = "Sign up"),
-        (this.isSignUp = true);
+    async login(type) {
+      this.isLoading = true;
+      await this.$auth.loginWith("google");
+
+      this.isLoading = false;
     },
-    onSignUp() {
-      (this.formText.header = "Sign in"),
-        (this.formText.button = "Sign in"),
-        (this.isSignUp = false);
+    signOut() {
+      // [START auth_sign_out]
+      firebase
+        .auth()
+        .signOut()
+        .then(() => {})
+        .catch(error => {
+          // An error happened.
+        });
+      // [END auth_sign_out]
     },
-    async onSubmit() {
-      await this.$store
-            .dispatch("onSubmit", { ...this.form, vm: this }).then(res => {
-              res === true && this.$router.push('/')
-            })
-    },
-    async doSignUp() {
-      await this.$store.dispatch('onCreateUser', {...this.form, vm: this})
-      
+    async onSave(profile) {},
+    getRealtimeUpdate() {
+      firebase
+        .firestore()
+        .collection("users")
+        .onSnapshot(doc => {
+          console.log(doc);
+        });
     }
   }
 };
 </script>
 
 <style lang="scss" scoped>
-.login-form {
+.center {
   position: absolute;
-  top: 30%;
+  top: 50%;
   left: 50%;
-  transform: translate(-50%, -30%);
-  border: 1px solid #41b883;
-  border-radius: 1rem;
-  padding: 0.5em;
-  form {
-    div {
-      align-items: center;
-    }
-
-    div > label {
-      font-weight: bold;
-    }
-    div > input {
-      padding: 0.3em;
-      margin: 0 0 1rem 1rem;
-      border: none;
-      outline: none;
-      border-bottom: 1px solid #e4e6eb;
-      width: 100%;
-      &:focus {
-      }
-    }
-    button {
-      width: 30%;
-      border: none;
-      outline: none;
-      border-radius: 0.5rem;
-      padding: 0.3rem 0.6rem;
-      font-weight: bold;
-      background-color: #41b883;
-      transition: 0.3s;
-      &:active {
-        transform: scale(0.9);
-      }
-    }
-  }
-  h1 {
+  transform: translate(-50%, -50%);
+  border: #ebebeb;
+  border: none;
+  button {
+    padding: 0.5rem 1rem;
+    border: none;
+    outline: none;
+    margin: 1rem 2rem;
+    border-radius: 2rem;
     font-weight: bold;
-    line-height: 100px;
-  }
-}
-.w-100 {
-  span:nth-child(1) {
-    &:hover {
-      text-decoration: underline;
-      cursor: pointer;
+    display: flex;
+    align-items: center;
+    width: 250px;
+    transition: 0.5s;
+    &:nth-child(2) {
+      background: #1877f2;
+      color: #fff;
+      .b-icon {
+        font-size: 2rem;
+      }
+    }
+    &:nth-child(1) {
+      img {
+        width: 2rem;
+        border-radius: 50%;
+      }
+      background: #ebebeb;
+      color: #000;
+    }
+    &:active {
+      transform: scale(0.9);
     }
   }
-  span:nth-child(2) {
-    .b-icon:hover {
-      cursor: pointer;
-    }
+}
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: grid;
+  place-items: center;
+}
+.spinner {
+  height: 60px;
+  width: 60px;
+  -webkit-animation: rotation 0.6s infinite linear;
+  -moz-animation: rotation 0.6s infinite linear;
+  -o-animation: rotation 0.6s infinite linear;
+  animation: rotation 0.6s infinite linear;
+  border-left: 6px solid rgba(0, 174, 239, 0.15);
+  border-right: 6px solid rgba(0, 174, 239, 0.15);
+  border-bottom: 6px solid rgba(0, 174, 239, 0.15);
+  border-top: 6px solid rgba(0, 174, 239, 0.8);
+  border-radius: 100%;
+}
+
+@-webkit-keyframes rotation {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(359deg);
   }
 }
-.inValidMessage {
-  color: red;
-  font-size: 0.8rem;
+@-moz-keyframes rotation {
+  from {
+    -moz-transform: rotate(0deg);
+  }
+  to {
+    -moz-transform: rotate(359deg);
+  }
+}
+@-o-keyframes rotation {
+  from {
+    -o-transform: rotate(0deg);
+  }
+  to {
+    -o-transform: rotate(359deg);
+  }
+}
+@keyframes rotation {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(359deg);
+  }
 }
 </style>

@@ -3,7 +3,7 @@
     <div class="header">
       <img src="/cover.jpg" alt="" />
       <div class="avatar">
-        <b-avatar src="/nayeon.jpg" size="6rem"></b-avatar>
+        <b-avatar :src="user.picture" size="6rem"></b-avatar>
       </div>
     </div>
 
@@ -30,7 +30,11 @@
 <script>
 import new_conversation from "../page_modals/new_conversation.vue";
 export default {
-  components: { new_conversation }
+  components: { new_conversation },
+  props: ["user"],
+  mounted() {
+    console.log(this.user);
+  }
 };
 </script>
 

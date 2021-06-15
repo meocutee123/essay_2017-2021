@@ -1,4 +1,6 @@
 export default {
+  ssr: false,
+  target: 'static',
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
     title: "NextTREND",
@@ -24,7 +26,13 @@ export default {
   css: ["~/assets/external.scss"],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: ['@/plugins/modals/v-modal.js', '@/plugins/vco.js', '@/plugins/firebase.js'],
+  plugins: [
+    "@/plugins/modals/v-modal.js",
+    "@/plugins/vco.js",
+    "@/plugins/firebase.js",
+    { src: "@plugins/confirm-box.js", mode: "client" },
+    { src: "@plugins/excel-export.js", mode: "client" }
+  ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -44,7 +52,9 @@ export default {
     // https://go.nuxtjs.dev/bootstrap
     "bootstrap-vue/nuxt",
     // https://go.nuxtjs.dev/axios
-    "@nuxtjs/axios"
+    "@nuxtjs/axios",
+    "vue-sweetalert2/nuxt",
+    '@nuxtjs/auth'
   ],
   bootstrapVue: {
     // Install the `IconsPlugin` plugin (in addition to `BootstrapVue` plugin)
@@ -52,9 +62,18 @@ export default {
   },
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
-    baseURL: 'https://getting-started-613bf-default-rtdb.firebaseio.com/'
+    baseURL: "https://api.linkpreview.net/"
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
-  build: {}
+  build: {},
+  auth: {
+    // Options
+    strategies: {
+      google: {
+        client_id: '102660532491-23otvcsedjv2qm9gcjrgt2s8g1pakl2r.apps.googleusercontent.com',
+        codeChallengeMethod: ""
+      },
+    },
+  }
 };

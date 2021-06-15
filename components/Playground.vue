@@ -12,8 +12,17 @@
       />
       <b-icon icon="image" scale="1.3rem" @click="$refs.file.click()"></b-icon>
       <b-icon icon="share-fill" scale="1.3rem"></b-icon>
-      <input type="file" accept="audio/*;capture=microphone" ref="audio" style="display: none"/>
-      <b-icon icon="mic-fill" scale="1.3rem" @click="$refs.audio.click()"></b-icon>
+      <input
+        type="file"
+        accept="audio/*;capture=microphone"
+        ref="audio"
+        style="display: none"
+      />
+      <b-icon
+        icon="mic-fill"
+        scale="1.3rem"
+        @click="$refs.audio.click()"
+      ></b-icon>
     </div>
     <div class="message d-flex">
       <div class="text">
@@ -26,13 +35,21 @@
               @click="onDeleteImage(index)"
             ></b-icon>
           </div>
+          <b-icon
+            id="arrow-clockwise"
+            class="align-self-center"
+            icon="arrow-clockwise"
+            animation="spin"
+            scale="1.3rem"
+            style="color: #41b883; display: none"
+          ></b-icon>
         </div>
         <textarea
           rows="2"
           placeholder="Type a message"
           @focus="onFocus = true"
           @blur="onfocus = false"
-          v-model="content"
+          v-model.trim="content"
           @keyup.enter.exact="onClickSend()"
         ></textarea>
         <b-icon
@@ -43,8 +60,8 @@
       </div>
       <b-icon
         @click="onClickSend()"
-        class="focus-icon mt-2 ml-3"
-        :icon="onFocus ? 'cursor-fill' : 'heart-fill'"
+        class="focus-icon mt-2 mx-3"
+        icon="cursor-fill"
         scale="1.4rem"
       ></b-icon>
     </div>
@@ -62,11 +79,12 @@ export default {
       content: "",
       images: [],
       tasks: [],
-      loged_id: null
+      logged_id: null,
+      user: []
     };
   },
-  mounted(){
-    this.loged_id = window.localStorage.getItem('loged_id')
+  mounted() {
+    this.logged_id = this.$auth.user.email;
   },
   methods: {
     onDeleteImage(index) {
@@ -75,6 +93,7 @@ export default {
     },
     onFileUpload(e) {
       let output = this.$refs.file;
+      if (!e.target.files[0]) return;
       output.src = URL.createObjectURL(e.target.files[0]);
       this.images.push(output.src);
       this.tasks.push(this.uploadFile(e));
@@ -95,35 +114,64 @@ export default {
     },
     async onClickSend() {
       const params = this.message();
+      this.content = "";
+      const el = document.getElementById("arrow-clockwise");
+      if (el) {
+        el.style.display = "block";
+      }
+      const regex = /(?:(?:https?|ftp|file):\/\/|www\.|ftp\.)(?:\([-A-Z0-9+&@#\/%=~_|$?!:,.]*\)|[-A-Z0-9+&@#\/%=~_|$?!:,.])*(?:\([-A-Z0-9+&@#\/%=~_|$?!:,.]*\)|[A-Z0-9+&@#\/%=~_|$])/gim;
+
+      if (params.message.match(regex)) {
+        await this.$axios
+          .get(
+            `?key=7ec772f6a66894f854b1b2c29372e8d6&q=${
+              params.message.slice(0, 4) !== "http"
+                ? "https://" + params.message
+                : params.message
+            }`
+          )
+          .then(
+            ({ data }) => (params.message = { ...data, text: params.message })
+          );
+      }
       if (this.images.length) {
         let listImages = [];
         await Promise.all(this.tasks).then(
           response => ((listImages = response), (this.tasks = []))
         );
+        el.style.display = "none";
         this.sendHandler({ ...params, message: listImages }).then(
           () => (this.images = [])
         );
       }
-      this.content !== "" && (await this.sendHandler(params));
-      this.content = "";
+      this.sendHandler(params);
     },
     async sendHandler(params) {
-      await this.$axios
-        .post("messages.json", JSON.stringify(params))
-        .then(response => {
-          this.$emit("sent", params);
-        })
-        .catch(err => {
-          console.log(err);
+      if (params.message === "" || params.message === "\n") return;
+      const db = firebase.database();
+      return new Promise(resolve => {
+        db.ref(`chat-sections/${this.sectionID}/messages`).push(
+          {
+            ...params
+          }
+        );
+
+        db.ref(`chat-sections/${this.sectionID}`).update({
+          unread: true,
+          sender: this.$auth.user.family_name,
+          seen: [this.logged_id]
         });
+        resolve(true);
+      });
     },
     message() {
       return {
         message: this.content,
-        created_at: new Date(),
-        chat_section: this.sectionID,
-        user: this.loged_id,
-        status: 1
+        user: this.logged_id,
+        created_at: new Date().toISOString(),
+        status: 1,
+        picture: this.$auth.user.picture,
+        name: this.$auth.user.name
       };
     }
   }
@@ -144,7 +192,7 @@ export default {
     .b-icon {
       &:hover {
         cursor: pointer;
-        color: #fec5bb;
+        color: #bbfee4;
       }
     }
   }

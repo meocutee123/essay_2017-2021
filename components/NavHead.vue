@@ -1,86 +1,85 @@
 <template>
-  <div class="sticky-top">
-    <b-navbar
-      class="header border-bottom"
-      toggleable="lg"
-      type="dark"
-      variant="light"
-    >
-      <b-navbar-brand class="d-flex">
-        <img src="/logo.png" alt="logo" style="max-height: 33px" />
-        <div class="brand ml-1">
-          <span class="h6">n</span>
-          <span class="h5">e</span>
-          <span class="h4">x</span>
-          <span class="h3">t</span>
-          <span class="h2" style="color: black; font-weight: bold">TREND</span>
-        </div>
-      </b-navbar-brand>
-      <div class="search ml-auto d-flex">
-        <b-input-group>
-          <b-form-input placeholder="Type to search for chat"></b-form-input>
-        </b-input-group>
-        <div class="hamburger ml-3" @click="isActive = !isActive">
-          <b-icon icon="list" scale="1.5rem"></b-icon>
-        </div>
+  <b-navbar
+    class="header border-bottom d-flex justify-content-between py-0"
+    toggleable="lg"
+    type="dark"
+    variant="light"
+  >
+    <b-navbar-brand class="d-flex">
+      <img src="/logo.png" alt="logo" style="max-height: 33px" />
+      <div class="brand ml-1">
+        <span class="h6">n</span>
+        <span class="h5">e</span>
+        <span class="h4">x</span>
+        <span class="h3">t</span>
+        <span class="h2" style="color: black; font-weight: bold">TREND</span>
       </div>
+    </b-navbar-brand>
+    <div class="search d-flex">
+      <b-input-group style="position: relative">
+        <b-form-input
+          id="search"
+          placeholder="Type to search for chat"
+        ></b-form-input>
+      </b-input-group>
       <div
-        :class="[
-          { active: isActive },
-          'home ml-auto d-flex align-items-center'
-        ]"
-      >
-        <div @click="openModal('profile')" class="profile">
-          <b-avatar
-            variant="danger"
-            size="2rem"
-            src="https://placekitten.com/300/300"
-          ></b-avatar
-          ><span>Nguyen</span>
-        </div>
-        <b-button
-          pill
-          class="btn-light-grey"
-          id="friends"
-          @click="openModal('friends')"
-        >
-          <b-icon icon="people-fill" aria-hidden="true" scale=".8rem"></b-icon>
-          <b-tooltip target="friends" triggers="hover">Friends</b-tooltip>
-        </b-button>
-        <b-button
-          pill
-          class="btn-light-grey"
-          id="notification"
-          @click="openModal('notification')"
-        >
-          <b-icon icon="bell-fill" aria-hidden="true" scale=".8rem" />
-          <b-badge class="badge" variant="danger">4</b-badge>
-          <b-tooltip target="notification" triggers="hover"
-            >Notification</b-tooltip
-          >
-        </b-button>
-        <b-button
-          pill
-          class="btn-light-grey"
-          v-b-tooltip.hover
-          title="Settings"
-          @click="openModal('settings')"
-          ><b-icon
-            icon="caret-up-fill"
-            font-scale=".8"
-            aria-hidden="true"
-            flip-h
-            flip-v
-          ></b-icon
-        ></b-button>
+        style="z-index: 1000;position: absolute; color: #273849; background: rgb(37 218 171); top: 3.3rem; width: 220px; border-radius: .5rem"
+        id="htmlOut"
+      ></div>
+    </div>
+    <div :class="[{ active: isActive }, 'home d-flex align-items-center']">
+      <div @click="openModal('profile')" class="profile">
+        <b-avatar
+          variant="danger"
+          size="2rem"
+          :src="`${$auth.user.picture || 'https://placekitten.com/300/300'}`"
+        ></b-avatar
+        ><span>{{ $auth.user.family_name }}</span>
       </div>
-    </b-navbar>
-    <v-modal name="modal">
-      <component :is="isComponent"></component>
-    </v-modal>
-  </div>
+      <b-button
+        pill
+        class="btn-light-grey"
+        id="friends"
+        @click="openModal('friends')"
+      >
+        <b-icon icon="people-fill" aria-hidden="true" scale=".8rem"></b-icon>
+        <b-tooltip target="friends" triggers="hover">Friends</b-tooltip>
+      </b-button>
+      <b-button
+        pill
+        class="btn-light-grey"
+        id="notification"
+        @click="openModal('notification')"
+      >
+        <b-icon icon="bell-fill" aria-hidden="true" scale=".8rem" />
+        <b-badge class="badge" variant="danger" id="noti"></b-badge>
+        <b-tooltip target="notification" triggers="hover"
+          >Notification</b-tooltip
+        >
+      </b-button>
+      <b-button
+        pill
+        class="btn-light-grey"
+        v-b-tooltip.hover
+        title="Settings"
+        @click="openModal('settings')"
+        ><b-icon
+          icon="caret-up-fill"
+          font-scale=".8"
+          aria-hidden="true"
+          flip-h
+          flip-v
+        ></b-icon
+      ></b-button>
+      <v-modal name="modal">
+        <component :is="isComponent" :user="logged_user[0]"></component>
+      </v-modal>
+    </div>
+  </b-navbar>
 </template>
 <script>
+import firebase from "firebase/app";
+
 import profile from "~/page_modals/profile";
 import settings from "~/page_modals/settings";
 import friends from "~/page_modals/friends";
@@ -90,7 +89,9 @@ export default {
   data() {
     return {
       isActive: false,
-      isComponent: "", loged_id: null
+      isComponent: "",
+      logged_id: null,
+      logged_user: []
     };
   },
   components: {
@@ -104,18 +105,110 @@ export default {
       this.$modal.close({ name: "modal" });
     });
   },
-  mounted() {
-    this.loged_id = window.localStorage.getItem('loged_id')
-    this.getLogedUser();
+  async mounted() {
+    this.logged_id = this.$auth.user.email;
+    this.checkExists();
+    const search = this.$el.querySelector("#search");
+    search.addEventListener("input", () => this.search(search.value));
   },
   methods: {
-    async getLogedUser() {
-      await this.$axios.get(`users.json`).then(({ data }) => {
-        for (let index in data) {
-          data[index].id === this.loged_id &&
-            this.$axios.get(`users/${index}.json`).then();
-        }
-      });
+    checkExists() {
+      firebase
+        .database()
+        .ref("/users")
+        .once("value")
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            let isExist = false;
+            for (let key in data) {
+              if (data[key].email === this.$auth.user.email) {
+                isExist = true;
+              }
+            }
+            isExist ? this.getloggedUser() : this.save();
+          } else {
+            this.save();
+          }
+        });
+    },
+    save() {
+      firebase
+        .database()
+        .ref("/users")
+        .push(this.$auth.user)
+        .then(() => this.getloggedUser());
+    },
+    async search(searchText) {
+      firebase
+        .database()
+        .ref("chat-sections")
+        .once("value")
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            let section = [];
+            for (let key in data) {
+              if (data[key].users.includes(this.logged_id)) {
+                section.push({ ...data[key], request_id: key });
+              }
+            }
+            let matches = section.filter(item => {
+              const regex = new RegExp(`${searchText}`, "g");
+              return item.name.toLowerCase().match(regex);
+            });
+            if (searchText.length === 0) {
+              matches = [];
+              this.$el.querySelector("#htmlOut").innerHTML = "";
+            }
+            this.outputHTML(matches);
+          }
+        });
+    },
+    outputHTML(matches) {
+      if (matches.length > 0) {
+        const html = matches
+          .map(
+            item => `
+          <div class="f-flex flex-column p-2" data-value="${item.request_id}">
+          <div style="padding: 0 5px; cursor: pointer; font-weight: bold">
+                <img style="width: 2rem; border-radius: 50%"
+                  src="${item.avatar[0]}"/>
+              ${item.name}
+            </div>
+          </div>
+
+        `
+          )
+          .join("");
+        this.$el.querySelector("#htmlOut").innerHTML = html;
+        this.$el.querySelectorAll("#htmlOut > div").forEach(item => {
+          item.addEventListener("click", () => {
+            this.handler(item.getAttribute("data-value"));
+          });
+        });
+      }
+    },
+    handler(payload) {
+      $nuxt.$emit("loadOnSearch", payload);
+      this.$el.querySelector("#htmlOut").innerHTML = "";
+    },
+    async getloggedUser() {
+      firebase
+        .database()
+        .ref("/users")
+        .once("value")
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            for (let key in data) {
+              if (data[key].email === this.logged_id) {
+                this.logged_user.push({ ...data[key], request_id: key });
+              }
+            }
+            this.getNotification();
+          }
+        });
     },
     openModal(name) {
       this.$modal.open({ name: "modal" });
@@ -123,14 +216,74 @@ export default {
     },
     closeModal() {
       this.$modal.close({ name: "modal" });
+    },
+    getNotification() {
+      const el = this.$el.querySelector("#noti");
+      firebase
+        .database()
+        .ref(`users/${this.logged_user[0].request_id}/friends`)
+        .on("value", snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            let length = 0;
+            for (let key in data) {
+              if (data[key].status === 0 && data[key].from != this.logged_id) {
+                length++;
+                if (data[key].isNew) {
+                  this.makeToast({ ...data[key], request_id: key });
+                }
+              }
+            }
+            el.innerHTML = length || "";
+          } else {
+            el.innerHTML = "";
+          }
+        });
+    },
+    makeToast(data) {
+      const h = this.$createElement;
+      const vNodesTitle = h("div", { class: ["d-flex w-100"] }, [
+        h("b-img", {
+          props: {
+            src: "logo.png",
+            width: "20px",
+            rounded: "circle",
+            fluid: true
+          }
+        }),
+        h("strong", { class: ["ml-1", "text-dark"] }, "Next TREND"),
+        h("small", { class: ["ml-auto"] }, "Just now!")
+      ]);
+      const vNodesMsg = h("div", { class: ["d-flex text-dark"] }, [
+        h("b-img", {
+          props: {
+            src: data.picture,
+            height: "50px",
+            rounded: "circle"
+          }
+        }),
+        h("p", { class: ["mb-0 ml-2"] }, [
+          h("strong", `${data.name} sent you a friend request.`),
+          h("br"),
+          h("small", "Cưới em nhé!")
+        ])
+      ]);
+      this.$bvToast.toast([vNodesMsg], {
+        title: [vNodesTitle],
+        toaster: "b-toaster-bottom-left",
+        variant: "success",
+        appned: false,
+        noCloseButton: true,
+        autoHideDelay: 5000
+      });
     }
-  },
+  }
 };
 </script>
 
 <style lang="scss" scoped>
 .header {
-  height: 60px;
+  height: 10vh;
   background-color: #fffffc !important;
   .brand {
     color: #fec5bb;
@@ -139,11 +292,6 @@ export default {
     input {
       border-radius: 2rem;
     }
-  }
-  .hamburger {
-    align-self: center;
-    display: none;
-    cursor: pointer;
   }
   .home {
     .b-icon {
@@ -185,23 +333,5 @@ export default {
 }
 .center {
   right: 500px;
-}
-
-@media only screen and (max-width: 940px) {
-  .hamburger {
-    display: block !important;
-  }
-  .home {
-    flex-direction: column-reverse;
-    position: fixed;
-    background-color: #ffd7ba;
-    height: calc(100% - 60px);
-    width: 250px !important;
-    top: 60px;
-    padding: 2rem 0;
-    right: 0;
-    transform: translateX(100%);
-    // transition: 0.5s ease-in;
-  }
 }
 </style>
