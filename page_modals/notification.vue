@@ -74,7 +74,7 @@ export default {
     };
   },
   async mounted() {
-    this.logged_id = this.$auth.user.email
+    this.logged_id = this.$auth.user.email;
     this.getData();
   },
   methods: {
@@ -94,7 +94,19 @@ export default {
             }
             this.isLoading = false;
             this.pendingAccept = pendingAccept;
-            console.log(pendingAccept);
+            pendingAccept.length && pendingAccept.forEach(item => {
+              firebase
+                .database()
+                .ref(
+                  "users/" +
+                    this.user.request_id +
+                    "/friends/" +
+                    item.data_request
+                )
+                .update({
+                  isNew: false
+                }).then(res => console.log(res));
+            });
           } else {
             this.isLoading = false;
             this.pendingAccept = [];

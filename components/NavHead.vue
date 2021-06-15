@@ -126,7 +126,7 @@ export default {
                 isExist = true;
               }
             }
-            isExist ? this.getloggedUser() : this.save()
+            isExist ? this.getloggedUser() : this.save();
           } else {
             this.save();
           }
@@ -169,7 +169,7 @@ export default {
       if (matches.length > 0) {
         const html = matches
           .map(
-            item => ` 
+            item => `
           <div class="f-flex flex-column p-2" data-value="${item.request_id}">
           <div style="padding: 0 5px; cursor: pointer; font-weight: bold">
                 <img style="width: 2rem; border-radius: 50%"
@@ -177,7 +177,7 @@ export default {
               ${item.name}
             </div>
           </div>
-        
+
         `
           )
           .join("");
@@ -229,6 +229,9 @@ export default {
             for (let key in data) {
               if (data[key].status === 0 && data[key].from != this.logged_id) {
                 length++;
+                if (data[key].isNew) {
+                  this.makeToast({ ...data[key], request_id: key });
+                }
               }
             }
             el.innerHTML = length || "";
@@ -236,6 +239,43 @@ export default {
             el.innerHTML = "";
           }
         });
+    },
+    makeToast(data) {
+      const h = this.$createElement;
+      const vNodesTitle = h("div", { class: ["d-flex w-100"] }, [
+        h("b-img", {
+          props: {
+            src: "logo.png",
+            width: "20px",
+            rounded: "circle",
+            fluid: true
+          }
+        }),
+        h("strong", { class: ["ml-1", "text-dark"] }, "Next TREND"),
+        h("small", { class: ["ml-auto"] }, "Just now!")
+      ]);
+      const vNodesMsg = h("div", { class: ["d-flex text-dark"] }, [
+        h("b-img", {
+          props: {
+            src: data.picture,
+            height: "50px",
+            rounded: "circle"
+          }
+        }),
+        h("p", { class: ["mb-0 ml-2"] }, [
+          h("strong", `${data.name} sent you a friend request.`),
+          h("br"),
+          h("small", "Cưới em nhé!")
+        ])
+      ]);
+      this.$bvToast.toast([vNodesMsg], {
+        title: [vNodesTitle],
+        toaster: "b-toaster-bottom-left",
+        variant: "success",
+        appned: false,
+        noCloseButton: true,
+        autoHideDelay: 5000
+      });
     }
   }
 };

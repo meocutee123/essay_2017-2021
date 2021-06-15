@@ -8,14 +8,7 @@
 </template>
 
 <script>
-export default {
-  data() {
-    return {};
-  },
-  methods: {
-
-  }
-};
+export default {};
 </script>
 
 <style lang="scss" scoped>
@@ -28,13 +21,13 @@ export default {
   justify-content: center;
   align-items: center;
   position: relative;
-z-index: -3;
+  z-index: -3;
   .airplane {
     width: 220px;
     animation: airplane 1s ease-in-out infinite alternate;
     z-index: -1;
   }
-  h3{
+  h3 {
     position: absolute;
     top: 75%;
     transform: translate(-75%);
@@ -73,11 +66,11 @@ z-index: -3;
     }
   }
   @keyframes clouds {
-    from{
-      right: 0
+    from {
+      right: 0;
     }
-    to{
-      right: 130%
+    to {
+      right: 130%;
     }
   }
 }

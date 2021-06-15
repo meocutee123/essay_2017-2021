@@ -7,23 +7,28 @@
       ]"
     >
       <div class="d-flex align-items-center">
-        <h2 id="title" style=" max-width: 500px;
+        <h2
+          id="title"
+          style=" max-width: 500px;
           overflow: hidden;
           text-overflow: ellipsis;
-          white-space: nowrap;">{{ chats.name }}</h2>
+          white-space: nowrap;"
+        >
+          {{ chats.name }}
+        </h2>
         <b-icon
           style="cursor: pointer"
           @click="changeTitle(sectionData)"
           class="h6 ml-4"
           icon="pencil-fill"
         ></b-icon>
-        <div
+        <!-- <div
           class="ml-auto actions d-flex justify-content-between align-items-center"
         >
           <b-icon icon="telephone" scale="1.3rem"></b-icon>
           <b-icon icon="camera-video" scale="1.3rem"></b-icon>
           <b-icon icon="person-plus" scale="1.3rem"></b-icon>
-        </div>
+        </div> -->
       </div>
       <div class="detail d-flex justify-content-between align-items-center">
         <p>
@@ -50,7 +55,7 @@
             :name="`${new Date().toISOString()}${sectionData.id}.xls`"
             class="d-inline-block ml-2"
           >
-            <b-icon class="mr-1" icon="cloud-arrow-down" scale="1.2rem"></b-icon
+            <b-icon class="mr-2" icon="cloud-arrow-down" scale="1.2rem"></b-icon
             >Export</export-excel
           >
         </p>
@@ -136,7 +141,7 @@
             :id="`message-${index}`"
             :class="
               `conversations d-flex align-items-${
-                content.user === logged_id ? 'end ml-auto' : 'start'
+                content.user === logged_id ? 'end ml-auto' : 'start mr-auto'
               } flex-column p-2 `
             "
           >
@@ -156,11 +161,12 @@
               <template v-else>
                 <div
                   class="message"
-                  :style="
+                  :style="[
                     content.user === logged_id
                       ? { 'background-color': '#41b883' }
-                      : { 'background-color': '#fcbf49' }
-                  "
+                      : { 'background-color': '#fcbf49' },
+                    { width: 'max-content' }
+                  ]"
                 >
                   <b-row v-if="Array.isArray(content.message)">
                     <b-col
@@ -169,13 +175,14 @@
                       :key="index"
                     >
                       <img
+                        @click="openImage(src)"
                         :src="`${src}`"
                         class="m-1"
                         alt=""
                         style="border-radius: 5px;
                              width: 160px;
                              height: 100px;
-                              object-fit: cover;"
+                              object-fit: cover; cursor: pointer"
                       />
                     </b-col>
                   </b-row>
@@ -203,7 +210,7 @@
                       ></a>
                       <small>{{ content.message.url }}</small>
                     </div>
-                    <span v-else>{{ content.message }}</span>
+                    <div v-else>{{ content.message }}</div>
                   </template>
                 </div>
 
@@ -308,7 +315,7 @@
             cols="6"
             class="p-2"
           >
-            <div><img :src="`${src}`" alt="" /></div>
+            <div><img :src="`${src}`" @click="openImage(src)" alt="" /></div>
           </b-col>
         </b-row>
         <h4 class="font-weight-bold">Files</h4>
@@ -369,6 +376,9 @@
         </b-row>
       </div>
     </div>
+    <b-modal :id="`modal-image`" centered hide-footer hide-header no-fade>
+      <b-img :src="src" fluid></b-img>
+    </b-modal>
   </section>
 </template>
 
@@ -385,6 +395,7 @@ export default {
   },
   data() {
     return {
+      src: null,
       user_temp: null,
       media: [],
       isActive: false,
@@ -582,6 +593,10 @@ export default {
     },
     openLink(index) {
       this.$refs[`link-${index}`][0].click();
+    },
+    openImage(src) {
+      this.src = src;
+      this.$bvModal.show(`modal-image`);
     }
   },
   computed: {

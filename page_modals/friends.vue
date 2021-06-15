@@ -174,13 +174,13 @@ export default {
         .push().key;
 
       db.ref("users/" + this.user.request_id + "/friends/" + key).update(
-        { ...person, status: 0, from: this.logged_id },
+        { ...person, status: 0, from: this.logged_id, created_date: new Date() },
         error => {
           console.log(error);
         }
       );
       db.ref("users/" + person.request_id + "/friends/" + key).update(
-        { ...this.user, status: 0, from: this.logged_id },
+        { ...this.user, status: 0, from: this.logged_id, isNew: true, created_date: new Date() },
         error => {
           console.log(error);
         }

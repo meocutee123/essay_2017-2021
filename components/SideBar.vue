@@ -1,13 +1,13 @@
 <template>
-  <div class="side-bar">
+  <div class="side-bar" @click="onClickOutside">
     <div class="side-header d-flex my-2 flex-column">
       <div class="mb-2 d-flex">
         <h4 class="ml-2 font-weight-bold">Chats</h4>
-        <button class="ml-auto btn-light-grey">
+        <!-- <button class="ml-auto btn-light-grey">
           <b-icon icon="three-dots" aria-hidden="true"></b-icon>
-        </button>
+        </button> -->
 
-        <button class="btn-light-grey" v-b-modal="'newConversation'">
+        <button class="ml-auto btn-light-grey" v-b-modal="'newConversation'">
           <b-icon icon="pencil-square" aria-hidden="true"></b-icon>
         </button>
         <b-modal id="newConversation" hide-footer hide-header>
@@ -102,12 +102,12 @@ export default {
     await this.getData();
   },
   methods: {
-    test(searchText = ""){
-      if(!searchText.length) this.getData()
+    test(searchText = "") {
+      if (!searchText.length) this.getData();
       const regex = new RegExp(`${searchText}`, "g");
       this.chatSections = this.chatSections.filter(item => {
-        return item.name.toLowerCase().match(regex)
-      })
+        return item.name.toLowerCase().match(regex);
+      });
     },
     async getData() {
       this.isLoadingSection = true;
@@ -195,6 +195,9 @@ export default {
       }
       this.seenList = list;
       return true;
+    },
+    onClickOutside() {
+      $nuxt.$emit("closeModal");
     }
   }
 };
