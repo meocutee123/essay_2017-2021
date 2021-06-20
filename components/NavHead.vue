@@ -6,24 +6,29 @@
     variant="light"
   >
     <b-navbar-brand class="d-flex">
-      <img src="/logo.png" alt="logo" style="max-height: 33px" />
-      <div class="brand ml-1">
-        <span class="h6">n</span>
+      <div class="brand mx-1" style="border-bottom: 2px solid #06d6a0;">
+        <span class="h6">N</span>
         <span class="h5">e</span>
         <span class="h4">x</span>
         <span class="h3">t</span>
-        <span class="h2" style="color: black; font-weight: bold">TREND</span>
+        <span class="h2" style="color: #35495e; font-weight: bold">TREND</span>
       </div>
+      <b-icon
+        icon="chat-dots-fill"
+        style="color: #06d6a0;"
+        scale="1.4rem"
+        shift-v="5"
+      ></b-icon>
     </b-navbar-brand>
-    <div class="search d-flex">
-      <b-input-group style="position: relative">
+    <div class="search d-flex" style="position: relative">
+      <b-input-group>
         <b-form-input
           id="search"
           placeholder="Type to search for chat"
         ></b-form-input>
       </b-input-group>
       <div
-        style="z-index: 1000;position: absolute; color: #273849; background: rgb(37 218 171); top: 3.3rem; width: 220px; border-radius: .5rem"
+        style="z-index: 1000;position: absolute; color: #273849; background: rgb(37 218 171); top: 6vh; width: 220px; border-radius: .5rem"
         id="htmlOut"
       ></div>
     </div>
@@ -75,6 +80,42 @@
         <component :is="isComponent" :user="logged_user[0]"></component>
       </v-modal>
     </div>
+    <b-toast
+      id="my-toast"
+      toaster="b-toaster-bottom-left"
+      variant="success"
+      no-close-button
+    >
+      <template #toast-title>
+        <div
+          class="d-flex w-100"
+          style="cursor: pointer"
+          @click="
+            isComponent = 'notification';
+            $modal.open({ name: 'modal' });
+          "
+        >
+          <b-img src="logo.png" width="20px" rounded="circle" fluid></b-img>
+          <strong class="ml-1 text-dark">Next TREND</strong>
+          <small class="ml-auto">Just now!</small>
+        </div>
+      </template>
+      <div
+        class="d-flex text-dark"
+        style="cursor: pointer"
+        @click="
+          isComponent = 'notification';
+          $modal.open({ name: 'modal' });
+        "
+      >
+        <b-img :src="toast.picture" height="50px" rounded="circle"></b-img>
+        <p class="ml-2 mb-0">
+          <strong>{{ `${toast.name} sent you a friend request.` }}</strong
+          ><br />
+          <small>Cưới em nhé!</small>
+        </p>
+      </div>
+    </b-toast>
   </b-navbar>
 </template>
 <script>
@@ -91,7 +132,8 @@ export default {
       isActive: false,
       isComponent: "",
       logged_id: null,
-      logged_user: []
+      logged_user: [],
+      toast: []
     };
   },
   components: {
@@ -154,7 +196,7 @@ export default {
               }
             }
             let matches = section.filter(item => {
-              const regex = new RegExp(`${searchText}`, "g");
+              const regex = new RegExp(`${searchText.toLowerCase()}`, "g");
               return item.name.toLowerCase().match(regex);
             });
             if (searchText.length === 0) {
@@ -241,41 +283,38 @@ export default {
         });
     },
     makeToast(data) {
-      const h = this.$createElement;
-      const vNodesTitle = h("div", { class: ["d-flex w-100"] }, [
-        h("b-img", {
-          props: {
-            src: "logo.png",
-            width: "20px",
-            rounded: "circle",
-            fluid: true
-          }
-        }),
-        h("strong", { class: ["ml-1", "text-dark"] }, "Next TREND"),
-        h("small", { class: ["ml-auto"] }, "Just now!")
-      ]);
-      const vNodesMsg = h("div", { class: ["d-flex text-dark"] }, [
-        h("b-img", {
-          props: {
-            src: data.picture,
-            height: "50px",
-            rounded: "circle"
-          }
-        }),
-        h("p", { class: ["mb-0 ml-2"] }, [
-          h("strong", `${data.name} sent you a friend request.`),
-          h("br"),
-          h("small", "Cưới em nhé!")
-        ])
-      ]);
-      this.$bvToast.toast([vNodesMsg], {
-        title: [vNodesTitle],
-        toaster: "b-toaster-bottom-left",
-        variant: "success",
-        appned: false,
-        noCloseButton: true,
-        autoHideDelay: 5000
-      });
+      this.toast = data;
+      // const h = this.$createElement;
+      // const vNodesTitle = h(
+      //   "div",
+      //   { class: ["d-flex w-100"] },[
+      //     (h("b-img", {
+      //       props: {
+      //         src: "logo.png",
+      //         width: "20px",
+      //         rounded: "circle",
+      //         fluid: true
+      //       }
+      //     }),
+      //     h("strong", { class: ["ml-1", "text-dark"] }, "Next TREND"),
+      //     h("small", { class: ["ml-auto"] }, "Just now!"))
+      //   ]
+      // );
+      // const vNodesMsg = h("div", { class: ["d-flex text-dark"] }, [
+      //   h("b-img", {
+      //     props: {
+      //       src: data.picture,
+      //       height: "50px",
+      //       rounded: "circle"
+      //     }
+      //   }),
+      //   h("p", { class: ["mb-0 ml-2"] }, [
+      //     h("strong", `${data.name} sent you a friend request.`),
+      //     h("br"),
+      //     h("small", "Cưới em nhé!")
+      //   ])
+      // ]);
+      this.$bvToast.show("my-toast");
     }
   }
 };
@@ -286,7 +325,7 @@ export default {
   height: 10vh;
   background-color: #fffffc !important;
   .brand {
-    color: #fec5bb;
+    color: #69daab;
   }
   .search {
     input {

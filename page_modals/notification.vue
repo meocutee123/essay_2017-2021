@@ -105,7 +105,7 @@ export default {
                 )
                 .update({
                   isNew: false
-                }).then(res => console.log(res));
+                })
             });
           } else {
             this.isLoading = false;

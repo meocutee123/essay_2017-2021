@@ -3,17 +3,23 @@
     <div class="side-header d-flex my-2 flex-column">
       <div class="mb-2 d-flex">
         <h4 class="ml-2 font-weight-bold">Chats</h4>
-        <!-- <button class="ml-auto btn-light-grey">
-          <b-icon icon="three-dots" aria-hidden="true"></b-icon>
-        </button> -->
+        <button class="ml-auto btn-light-grey" v-b-toggle="`collapse-chats`">
+          <b-icon icon="caret-down-fill" aria-hidden="true"></b-icon>
+        </button>
 
-        <button class="ml-auto btn-light-grey" v-b-modal="'newConversation'">
+        <button class="btn-light-grey" v-b-modal="'newConversation'">
           <b-icon icon="pencil-square" aria-hidden="true"></b-icon>
         </button>
         <b-modal id="newConversation" hide-footer hide-header>
           <new_conversation @onCreate="onCreate" />
         </b-modal>
       </div>
+      <b-collapse :id="`collapse-chats`" class="collapse-btn mb-2 text-center">
+        <button class="onActive" @click="onFilter($event.target)" value="all">
+          All
+        </button>
+        <button @click="onFilter($event.target)" value="groups">Groups</button>
+      </b-collapse>
       <div style="position: relative" class="d-flex align-items-center px-2">
         <b-icon icon="search" class="icon-search"></b-icon>
         <input
@@ -60,7 +66,7 @@
             :key="index02"
             :src="`${avt}`"
           ></b-avatar>
-          <span class="numbers">{{
+          <span class="numbers font-weight-bold text-dark">{{
             chat.avatar.length == 2 ? "" : "+ " + (chat.avatar.length - 2)
           }}</span>
         </b-avatar-group>
@@ -104,12 +110,12 @@ export default {
   methods: {
     test(searchText = "") {
       if (!searchText.length) this.getData();
-      const regex = new RegExp(`${searchText}`, "g");
+      const regex = new RegExp(`${searchText.toLowerCase()}`, "g");
       this.chatSections = this.chatSections.filter(item => {
         return item.name.toLowerCase().match(regex);
       });
     },
-    async getData() {
+    async getData(condition) {
       this.isLoadingSection = true;
       firebase
         .database()
@@ -124,7 +130,9 @@ export default {
               }
             }
             this.isLoadingSection = false;
-            this.chatSections = payload.reverse();
+            this.chatSections = condition
+              ? payload.reverse().filter(item => item.users.length >= 3)
+              : payload.reverse();
           } else {
             this.chatSections = [];
             this.isLoadingSection = false;
@@ -184,7 +192,7 @@ export default {
         }
         const result = lastItem.message;
         if (Array.isArray(result)) {
-          return chat.sender + " sent " + result.length + " photo(s).";
+          return chat.sender + " attached " + result.length + " file(s).";
         }
         return chat.sender + ": " + (result.text || result) + ".";
       }
@@ -198,6 +206,23 @@ export default {
     },
     onClickOutside() {
       $nuxt.$emit("closeModal");
+    },
+    onFilter(e) {
+      if (e.classList.length) {
+        e.classList.remove("onActive");
+        this.getData(false);
+        return;
+      }
+      if (e.value === "groups") {
+        e.classList.add("onActive");
+        this.getData(true);
+        return;
+      }
+      if (e.value === "all") {
+        e.classList.add("onActive");
+        e.nextElementSibling.classList.remove("onActive");
+        this.getData(false);
+      }
     }
   }
 };
@@ -207,7 +232,7 @@ export default {
   height: 90vh;
   .side-content {
     border-right: 1px solid #e4e6eb;
-    height: calc(100% - 77.78px - 16px);
+    height: calc(100% - 77.78px - 16px - 26px - 8px);
     width: 100%;
     overflow-y: scroll;
     box-sizing: border-box;
@@ -278,5 +303,13 @@ export default {
   position: absolute;
   right: -1.7rem;
   top: 25%;
+}
+.collapse-btn button {
+  border: none;
+  outline: none;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  width: 40%;
+  margin: 0 .3rem;
 }
 </style>

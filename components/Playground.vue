@@ -4,31 +4,31 @@
       class=" pg-actions d-flex justify-content-between align-items-center mb-2"
     >
       <input
-        ref="file"
+        ref="image"
         type="file"
         style="display: none"
         @change="onFileUpload"
-        accept="image/*"
+        accept="image/*, video/*"
       />
-      <b-icon icon="image" scale="1.3rem" @click="$refs.file.click()"></b-icon>
-      <b-icon icon="share-fill" scale="1.3rem"></b-icon>
+      <b-icon icon="image" scale="1.3rem" class="mr-2" @click="$refs.image.click()"></b-icon>
       <input
         type="file"
-        accept="audio/*;capture=microphone"
-        ref="audio"
+        accept=".doc,.docx,.xml,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ref="file"
         style="display: none"
+        @change="onFileUpload"
       />
       <b-icon
-        icon="mic-fill"
+        icon="files"
         scale="1.3rem"
-        @click="$refs.audio.click()"
+        @click="$refs.file.click()"
       ></b-icon>
     </div>
-    <div class="message d-flex">
+    <div class="message d-flex ml-auto">
       <div class="text">
         <div class="preview d-flex" v-if="images.length">
           <div v-for="(src, index) in images" :key="index">
-            <img :src="`${src}`" :alt="`preview-${index}`" />
+            <img :src="`${src}`" :alt="`preview-${index}`" @error="$event.target.src ='file.png'"/>
             <b-icon
               icon="x"
               scale="1.5rem"
@@ -52,11 +52,11 @@
           v-model.trim="content"
           @keyup.enter.exact="onClickSend()"
         ></textarea>
-        <b-icon
+        <!-- <b-icon
           class="icon-smile"
           icon="emoji-smile-fill"
           scale="1.4rem"
-        ></b-icon>
+        ></b-icon> -->
       </div>
       <b-icon
         @click="onClickSend()"
@@ -80,7 +80,8 @@ export default {
       images: [],
       tasks: [],
       logged_id: null,
-      user: []
+      user: [],
+      disableSend: false
     };
   },
   mounted() {
@@ -113,6 +114,7 @@ export default {
       });
     },
     async onClickSend() {
+      if (this.disableSend) return;
       const params = this.message();
       this.content = "";
       const el = document.getElementById("arrow-clockwise");
@@ -136,13 +138,15 @@ export default {
       }
       if (this.images.length) {
         let listImages = [];
+        this.disableSend = true;
         await Promise.all(this.tasks).then(
           response => ((listImages = response), (this.tasks = []))
         );
         el.style.display = "none";
         this.sendHandler({ ...params, message: listImages }).then(
-          () => (this.images = [])
+          () => ((this.images = []), (this.disableSend = false))
         );
+        return;
       }
       this.sendHandler(params);
     },
@@ -150,11 +154,9 @@ export default {
       if (params.message === "" || params.message === "\n") return;
       const db = firebase.database();
       return new Promise(resolve => {
-        db.ref(`chat-sections/${this.sectionID}/messages`).push(
-          {
-            ...params
-          }
-        );
+        db.ref(`chat-sections/${this.sectionID}/messages`).push({
+          ...params
+        });
 
         db.ref(`chat-sections/${this.sectionID}`).update({
           unread: true,
@@ -174,7 +176,8 @@ export default {
         name: this.$auth.user.name
       };
     }
-  }
+  },
+
 };
 </script>
 
@@ -187,7 +190,6 @@ export default {
   .pg-actions {
     color: #41b883;
     padding: 5px 15px 5px 10px;
-    min-width: 150px;
     transition: 0.2s;
     .b-icon {
       &:hover {
@@ -203,7 +205,7 @@ export default {
       position: relative;
       .preview {
         position: absolute;
-        top: -70px;
+        top: -130px;
         div {
           margin: 0.5em;
           background: #98dfbf;
@@ -220,8 +222,7 @@ export default {
           }
           img {
             border-radius: 5px;
-            width: 100px;
-            height: 55px;
+            height: 100px;
             object-fit: cover;
             transition: 0.3s;
           }

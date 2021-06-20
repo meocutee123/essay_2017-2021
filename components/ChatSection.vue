@@ -171,10 +171,35 @@
                   <b-row v-if="Array.isArray(content.message)">
                     <b-col
                       cols="6"
+                      class="px-0"
                       v-for="(src, index) in content.message"
                       :key="index"
                     >
+                      <div
+                        class="d-flex align-items-center justify-content-center p-1"
+                        v-if="!isFile(src).status"
+                        style="border-radius: 5px;
+                             width: 160px;
+                             height: 100px;
+                            cursor: pointer;
+                            
+                          overflow-y: hidden"
+                      >
+                        <b-icon
+                          class="w-50 mr-1"
+                          scale="5rem"
+                          icon="file-earmark-zip"
+                        ></b-icon>
+                        <a
+                          :href="src"
+                          style="color: #35495e;
+                          width: 40%;
+                          "
+                          >{{ isFile(src).name }}</a
+                        >
+                      </div>
                       <img
+                        v-else
                         @click="openImage(src)"
                         :src="`${src}`"
                         class="m-1"
@@ -269,7 +294,7 @@
         <h2 class="ml-3">Gallery</h2>
       </div>
       <div class="images">
-        <h4 class="font-weight-bold">Images</h4>
+        <h4 class="font-weight-bold">Recent files</h4>
         <b-row class="p-2" v-if="isLoadingGallery">
           <b-col cols="6" class="p-2">
             <div>
@@ -315,69 +340,37 @@
             cols="6"
             class="p-2"
           >
-            <div><img :src="`${src}`" @click="openImage(src)" alt="" /></div>
-          </b-col>
-        </b-row>
-        <h4 class="font-weight-bold">Files</h4>
-        <b-row class="p-2" v-if="isLoadingGallery">
-          <b-col cols="6" class="p-2">
-            <div>
-              <b-skeleton-img
-                no-aspect
-                height="8rem"
-                width="8rem"
-              ></b-skeleton-img>
+            <div class="d-flex bg-warning p-1" v-if="!isFile(src).status">
+              <b-icon
+                class="w-50 mr-1 text-dark align-self-center"
+                scale="5rem"
+                icon="file-earmark-zip"
+              ></b-icon>
+              <a
+                :href="src"
+                style="color: #35495e;
+                          width: 40%;
+                          word-wrap: break-word;
+                          "
+                >{{ isFile(src).name }}</a
+              >
+            </div>
+            <div v-else>
+              <img :src="`${src}`" @click="openImage(src)" alt="" />
             </div>
           </b-col>
-          <b-col cols="6" class="p-2">
-            <div>
-              <b-skeleton-img
-                no-aspect
-                height="8rem"
-                width="8rem"
-              ></b-skeleton-img>
-            </div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div>
-              <b-skeleton-img
-                no-aspect
-                height="8rem"
-                width="8rem"
-              ></b-skeleton-img>
-            </div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div>
-              <b-skeleton-img
-                no-aspect
-                height="8rem"
-                width="8rem"
-              ></b-skeleton-img>
-            </div>
-          </b-col>
-        </b-row>
-        <b-row class="p-2">
-          <!-- <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col> -->
         </b-row>
       </div>
     </div>
-    <b-modal :id="`modal-image`" centered hide-footer hide-header no-fade>
-      <b-img :src="src" fluid></b-img>
+    <b-modal
+      :id="`modal-image`"
+      centered
+      hide-footer
+      hide-header
+      no-fade
+      size="xl"
+    >
+      <b-img :src="src" style="width: 100%; height: auto"></b-img>
     </b-modal>
   </section>
 </template>
@@ -425,6 +418,14 @@ export default {
     this.getData();
   },
   methods: {
+    isFile(value) {
+      const regex = /\.(gif|jpe?g|jfif?|tiff?|png|webp|bmp)$/i;
+      let name = firebase.storage().refFromURL(value).name;
+      return {
+        status: regex.test(name),
+        name: name
+      };
+    },
     onClickOutside() {
       $nuxt.$emit("closeModal");
     },
@@ -447,7 +448,11 @@ export default {
           if (Array.isArray(item.message)) {
             return;
           }
-          return item.message.match(regex);
+          if (item.message.text) {
+            return item.message.text.match(regex);
+          } else {
+            return item.message.match(regex);
+          }
         });
         if (index == -1) {
           this.$swal.fire(`No message match`);
@@ -473,7 +478,7 @@ export default {
             const data = snapshot.val();
             for (let index in data) {
               let item = data[index];
-              if (Array.isArray(item.message)) {
+              if (item.status && Array.isArray(item.message)) {
                 listImages.push(...item.message);
               }
             }
