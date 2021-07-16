@@ -10,7 +10,12 @@
         @change="onFileUpload"
         accept="image/*, video/*"
       />
-      <b-icon icon="image" scale="1.3rem" class="mr-2" @click="$refs.image.click()"></b-icon>
+      <b-icon
+        icon="image"
+        scale="1.3rem"
+        class="mr-2"
+        @click="$refs.image.click()"
+      ></b-icon>
       <input
         type="file"
         accept=".doc,.docx,.xml,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -18,17 +23,17 @@
         style="display: none"
         @change="onFileUpload"
       />
-      <b-icon
-        icon="files"
-        scale="1.3rem"
-        @click="$refs.file.click()"
-      ></b-icon>
+      <b-icon icon="files" scale="1.3rem" @click="$refs.file.click()"></b-icon>
     </div>
     <div class="message d-flex ml-auto">
       <div class="text">
         <div class="preview d-flex" v-if="images.length">
           <div v-for="(src, index) in images" :key="index">
-            <img :src="`${src}`" :alt="`preview-${index}`" @error="$event.target.src ='file.png'"/>
+            <img
+              :src="`${src}`"
+              :alt="`preview-${index}`"
+              @error="$event.target.src = 'file.png'"
+            />
             <b-icon
               icon="x"
               scale="1.5rem"
@@ -52,11 +57,18 @@
           v-model.trim="content"
           @keyup.enter.exact="onClickSend()"
         ></textarea>
-        <!-- <b-icon
-          class="icon-smile"
-          icon="emoji-smile-fill"
-          scale="1.4rem"
-        ></b-icon> -->
+        <div v-if="isReply" class="reply">
+          Replying to {{ reply.name }}
+          <b-icon icon="x" @click="isReply = false"></b-icon>
+        </div>
+        <div class="mention">
+          <div v-for="(user, index) in users" :key="index">
+            <div class="p-1" @click="onSelectUser(user.name)">
+              <b-avatar :src="user.picture" size="2rem" class="mr-2"></b-avatar>
+              <span>{{ user.name }}</span>
+            </div>
+          </div>
+        </div>
       </div>
       <b-icon
         @click="onClickSend()"
@@ -81,11 +93,23 @@ export default {
       tasks: [],
       logged_id: null,
       user: [],
-      disableSend: false
+      disableSend: false,
+      isReply: false,
+      reply: [],
+      listUsers: [],
+      users: []
     };
+  },
+  created() {
+    this.$nuxt.$on("onReply", payload => {
+      this.isReply = true;
+      this.reply = payload;
+      document.querySelector("textarea").focus();
+    });
   },
   mounted() {
     this.logged_id = this.$auth.user.email;
+    this.getListUsers();
   },
   methods: {
     onDeleteImage(index) {
@@ -115,7 +139,10 @@ export default {
     },
     async onClickSend() {
       if (this.disableSend) return;
-      const params = this.message();
+      if (this.onSelectUser()) return;
+      const params = this.isReply
+        ? { ...this.message(), reply: this.reply }
+        : this.message();
       this.content = "";
       const el = document.getElementById("arrow-clockwise");
       if (el) {
@@ -134,7 +161,8 @@ export default {
           )
           .then(
             ({ data }) => (params.message = { ...data, text: params.message })
-          );
+          )
+          .catch(err);
       }
       if (this.images.length) {
         let listImages = [];
@@ -144,7 +172,10 @@ export default {
         );
         el.style.display = "none";
         this.sendHandler({ ...params, message: listImages }).then(
-          () => ((this.images = []), (this.disableSend = false))
+          () => (
+            (this.images = []),
+            ((this.disableSend = false), (this.isReply = false))
+          )
         );
         return;
       }
@@ -163,6 +194,7 @@ export default {
           sender: this.$auth.user.family_name,
           seen: [this.logged_id]
         });
+        this.isReply = false;
         resolve(true);
       });
     },
@@ -175,9 +207,87 @@ export default {
         picture: this.$auth.user.picture,
         name: this.$auth.user.name
       };
+    },
+    getListUsers() {
+      firebase
+        .database()
+        .ref(`chat-sections/${this.sectionID}/users`)
+        .on("value", snapshot => {
+          let list = [];
+          if (snapshot.exists()) {
+            list = snapshot.val();
+          }
+          this.listUsers = list;
+        });
+    },
+    onMention(px, text) {
+      this.users = [];
+      const regex = new RegExp(`${text}`, "gi");
+      document
+        .querySelector(".mention")
+        .setAttribute(
+          "style",
+          `left: calc(400px + ${px * 6 > 700 ? 700 : px * 7}px)`
+        );
+      const users = [];
+      firebase
+        .database()
+        .ref(`users`)
+        .get()
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            for (let key in data) {
+              if (this.listUsers.includes(data[key].email)) {
+                users.push(data[key]);
+              }
+            }
+            if (text === "") {
+              this.users = users;
+              return;
+            }
+            this.users = users.filter(user => user.name.match(regex));
+          }
+        });
+    },
+    onSelectUser(name) {
+      const regex = /[?=@]+([a-zA-Z0-9ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂẾưăạảấầẩẫậắằẳẵặẹẻẽềềểếỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ|_])*$/gi;
+      if (name || this.users.length) {
+        this.content = this.content.replace(
+          regex,
+          `@${name || this.users[0].name}`
+        );
+        document.querySelector("textarea").focus();
+        this.users = [];
+        return true
+      }
+      return false
     }
   },
-
+  watch: {
+    content: {
+      handler(message) {
+        const regex = /[@]\w*$/g;
+        if (message.match(regex)) {
+          let text = message
+            .match(regex)
+            .toString()
+            .substring(1);
+          this.onMention(message.length, text);
+        } else {
+          document
+            .querySelector(".mention")
+            .setAttribute("style", "display: none");
+        }
+      }
+    },
+    sectionID: {
+      handler() {
+        this.getListUsers();
+        this.content = "";
+      }
+    }
+  }
 };
 </script>
 
@@ -241,6 +351,43 @@ export default {
         font-size: 1rem;
         &::-webkit-scrollbar {
           display: none;
+        }
+      }
+      .reply {
+        position: absolute;
+        top: -50%;
+        right: 0;
+        background: #ebebeb;
+        border-radius: 0.8rem;
+        padding: 0 0.5rem;
+        font-weight: bolder;
+        z-index: 100;
+        .b-icon {
+          cursor: pointer;
+        }
+      }
+      .mention {
+        position: fixed;
+        bottom: -70px;
+        margin-bottom: 130px;
+        background: #ebebeb;
+        border-radius: 7px;
+        padding: 5px;
+        div {
+          width: 200px;
+          border-radius: 5px;
+          cursor: pointer;
+          transition: 0.3s ease;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: clip;
+          &:hover {
+            background: #c6e3ff;
+          }
+        }
+        & > div:first-child {
+          background: #41b883;
+          color: #273849;
         }
       }
       .icon-smile {

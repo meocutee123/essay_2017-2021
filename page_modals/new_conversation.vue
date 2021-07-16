@@ -238,7 +238,12 @@ export default {
             users: users,
             name: listUsers.map(item => item.family_name).join(", "),
             avatar: avatars,
-            host: this.logged_id
+            host: this.logged_id,
+            options:{
+              allow_add: true,
+              allow_change: true,
+              members: users.length
+            }
           })
           .then(({ key }) => resolve(key));
       });

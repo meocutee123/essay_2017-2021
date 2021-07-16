@@ -1,109 +1,114 @@
-
 /* custom scrollbar */
+
 *::-webkit-scrollbar {
-  width: 12px;
+    width: 12px;
 }
 
 *::-webkit-scrollbar-track {
-  background-color: white;
+    background-color: white;
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: #d6dee1;
-  border-radius: 20px;
-  border: 1px solid transparent;
-  background-clip: content-box;
+    background-color: #d6dee1;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    background-clip: content-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: #a8bbbf;
+    background-color: #a8bbbf;
 }
-span:focus{
-  outline: none;
-  border: none;
+
+span:focus {
+    outline: none;
+    border: none;
 }
+
 body {
-  font-family: "Open Sans", sans-serif;
-  color: #273849;
-  width: 100vw;
-  height: 100vh;
-  box-sizing: border-box;
-  overflow: hidden;
+    font-family: "Open Sans", sans-serif;
+    color: #273849;
+    width: 100vw;
+    height: 100vh;
+    box-sizing: border-box;
+    overflow: hidden;
 }
+
 .btn_lv1 {
-  padding: 5px 7px;
-  border-radius: 2em;
-  background-color: rgb(93, 247, 188);
-  outline: none;
-  border: none;
-  font-weight: 600;
-  color: #ffffff;
-  transition: 0.5s;
-  &:hover {
-    background-color: rgb(80, 228, 171);
-  }
+    padding: 5px 7px;
+    border-radius: 2em;
+    background-color: rgb(93, 247, 188);
+    outline: none;
+    border: none;
+    font-weight: 600;
+    color: #ffffff;
+    transition: 0.5s;
+    &:hover {
+        background-color: rgb(80, 228, 171);
+    }
 }
+
 button:focus {
-  box-shadow: none;
-}
-.btn-light-grey {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background-color: #e4e6eb;
-  outline: none;
-  border: none;
-  position: relative;
-  margin: 0 0.3em;
-  color: #41b883;
-  &:hover {
-    background-color: #d3d6df;
-    cursor: pointer;
-  }
-  &:focus{
     box-shadow: none;
-  }
-  .b-icon {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-  .badge {
-    position: absolute;
-    top: -0.5em;
-    right: -0.5em;
-  }
 }
-@media only screen and (max-height: 700px) {
+
+.btn-light-grey {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: #e4e6eb;
+    outline: none;
+    border: none;
+    position: relative;
+    margin: 0 0.3em;
+    color: #41b883;
+    &:hover {
+        background-color: #d3d6df;
+        cursor: pointer;
+    }
+    &:focus {
+        box-shadow: none;
+    }
+    .b-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .badge {
+        position: absolute;
+        top: -0.5em;
+        right: -0.5em;
+    }
 }
+
+@media only screen and (max-height: 700px) {}
 
 .group {
-  border-radius: 9999px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
-  height: 150px;
-  margin: 0 20px;
-  overflow: hidden;
-  width: 150px;
+    border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+    height: 150px;
+    margin: 0 20px;
+    overflow: hidden;
+    width: 150px;
 }
 
-.group > div {
-  background-color: #333;
-  background-position: 50% 50%;
-  background-size: cover;
-  float: left;
-  height: 100%;
-  width: 50%;
+.group>div {
+    background-color: #333;
+    background-position: 50% 50%;
+    background-size: cover;
+    float: left;
+    height: 100%;
+    width: 50%;
 }
 
-.group > div:first-child:last-child {
-  width: 100%;
+.group>div:first-child:last-child {
+    width: 100%;
 }
 
-.group > div:last-child:nth-child(3),
-.group > div:nth-child(2):nth-last-child(2)
-{
-  height: 50%;
+.group>div:last-child:nth-child(3),
+.group>div:nth-child(2):nth-last-child(2) {
+    height: 50%;
 }
-  
+
+
 /* logo: #35495e 41b883 text-color: 273849 button_bg: 4fc08d black: 111111 grey: 7f8c8d*/

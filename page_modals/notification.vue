@@ -93,7 +93,7 @@ export default {
               }
             }
             this.isLoading = false;
-            this.pendingAccept = pendingAccept;
+            this.pendingAccept = pendingAccept.reverse();
             pendingAccept.length && pendingAccept.forEach(item => {
               firebase
                 .database()
