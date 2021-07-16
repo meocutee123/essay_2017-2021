@@ -17,6 +17,7 @@
           {{ chats.name }}
         </h2>
         <b-icon
+          v-if="sectionData.host === logged_id || options.allow_name"
           style="cursor: pointer"
           @click="changeTitle(sectionData)"
           class="h6 ml-4"
@@ -58,7 +59,50 @@
             <b-icon class="mr-2" icon="cloud-arrow-down" scale="1.2rem"></b-icon
             >Export</export-excel
           >
+          |
+          <span v-b-modal.settings v-if="sectionData.host == logged_id"
+            ><b-icon icon="gear-fill" scale="1rem"></b-icon> Settings</span
+          >
         </p>
+        <b-modal id="settings" scrollable hide-footer hide-header>
+          <b-form-group>
+            <label class="font-weight-bold mt-2">Section settings</label>
+            <div class="d-flex">
+              <b-form-checkbox
+                v-model="options.allow_add"
+                name="check-button"
+                switch
+                class="mr-3"
+              >
+                New paticipants
+              </b-form-checkbox>
+              <b-form-checkbox
+                v-model="options.allow_name"
+                name="check-button"
+                switch
+              >
+                Group title
+              </b-form-checkbox>
+            </div>
+            <label class="font-weight-bold mt-2"
+              >Maximum members:
+              <span class="text-success">{{ options.members }}</span></label
+            >
+            <b-form-input
+              id="range-1"
+              v-model.number="options.members"
+              type="range"
+              min="2"
+              max="10"
+            ></b-form-input>
+            <b-button
+              @click="settings()"
+              class="btn-sm font-weight-bold"
+              style="background: #41b883;"
+              >Confirm</b-button
+            >
+          </b-form-group>
+        </b-modal>
         <b-modal id="paticipants" scrollable hide-footer hide-header>
           <paticipants :sectionID="sectionData.id" />
         </b-modal>
@@ -145,10 +189,12 @@
               } flex-column p-2 `
             "
           >
+            <small v-if="content.user !== logged_id">
+              <b-icon v-if="content.reply" icon="reply-fill"></b-icon>
+              {{ content.name }}
+              <span v-if="content.reply">{{ content.reply.user ===logged_id ? 'replied to you' : `replied to ${content.reply.name}` }}</span></small
+            >
             <div class="content d-flex flex-column">
-              <small v-if="content.user !== logged_id">{{
-                content.name
-              }}</small>
               <template v-if="!content.status">
                 <div class="unsent">
                   {{
@@ -168,13 +214,109 @@
                     { width: 'max-content' }
                   ]"
                 >
+                  <div class="content-reply" v-if="content.reply">
+                    <b-row v-if="Array.isArray(content.reply.message)">
+                      <b-col
+                        cols="6"
+                        class="px-0"
+                        v-for="(src, index) in content.reply.message"
+                        :key="index"
+                      >
+                        <div
+                          class="d-flex align-items-center justify-content-center p-1"
+                          v-if="!isFile(src).status"
+                          style="border-radius: 5px;
+                             width: 160px;
+                             height: 100px;
+                            cursor: pointer;
+                            
+                          overflow-y: hidden"
+                        >
+                          <b-icon
+                            class="w-50 mr-1"
+                            scale="5rem"
+                            icon="file-earmark-zip"
+                          ></b-icon>
+                          <a
+                            :href="src"
+                            style="color: #35495e;
+                          width: 40%;
+                          "
+                            >{{ isFile(src).name }}</a
+                          >
+                        </div>
+                        <img
+                          v-else
+                          @click="openImage(src)"
+                          :src="`${src}`"
+                          class="m-1"
+                          alt=""
+                          style="border-radius: 5px;
+                             width: 160px;
+                             height: 100px;
+                              object-fit: cover; cursor: pointer"
+                        />
+                      </b-col>
+                    </b-row>
+
+                    <template v-else>
+                      <div
+                        @click="openLink(index)"
+                        class="link-preview d-flex flex-column"
+                        v-if="content.reply.message.url"
+                      >
+                        <span>{{ content.reply.message.text }}</span>
+                        <img
+                          style="height: 100px; object-fit: cover; border-radius: 1rem"
+                          :src="`${content.reply.message.image}`"
+                          :alt="`${content.reply.message.title}`"
+                        />
+                        <span class="font-weight-bold">
+                          {{ content.reply.message.title }}
+                        </span>
+                        <a
+                          :ref="`link-${index}`"
+                          style="display: none"
+                          :href="`${content.reply.message.url}`"
+                          target="_blank"
+                        ></a>
+                        <small>{{ content.reply.message.url }}</small>
+                      </div>
+                      <div v-else>{{ content.reply.message }}</div>
+                    </template>
+                  </div>
                   <b-row v-if="Array.isArray(content.message)">
                     <b-col
                       cols="6"
+                      class="px-0"
                       v-for="(src, index) in content.message"
                       :key="index"
                     >
+                      <div
+                        class="d-flex align-items-center justify-content-center p-1"
+                        v-if="!isFile(src).status"
+                        style="border-radius: 5px;
+                             width: 160px;
+                             height: 100px;
+                            cursor: pointer;
+                            
+                          overflow-y: hidden"
+                      >
+                        <b-icon
+                          class="w-50 mr-1"
+                          scale="5rem"
+                          icon="file-earmark-zip"
+                        ></b-icon>
+                        <a
+                          :href="src"
+                          style="color: #35495e;
+                          width: 40%;
+                          "
+                          >{{ isFile(src).name }}</a
+                        >
+                      </div>
                       <img
+                        v-else
                         @click="openImage(src)"
                         :src="`${src}`"
                         class="m-1"
@@ -210,7 +352,7 @@
                       ></a>
                       <small>{{ content.message.url }}</small>
                     </div>
-                    <div v-else>{{ content.message }}</div>
+                    <div v-else>{{content.message}}</div>
                   </template>
                 </div>
 
@@ -219,19 +361,22 @@
                   :style="
                     content.user === logged_id
                       ? { left: '-20px' }
-                      : { right: '-50px' }
+                      : { right: '-30px' }
                   "
                 >
-                  <b-icon
-                    v-if="content.user === logged_id"
-                    icon="three-dots"
-                  ></b-icon>
-                  <div
-                    v-if="content.user === logged_id"
-                    class="action d-flex flex-column"
-                  >
-                    <span @click="onDelete(content.id)" style="font-size: 13px"
+                  <b-icon icon="three-dots"></b-icon>
+                  <div class="action d-flex flex-column">
+                    <span
+                      v-if="content.user === logged_id"
+                      @click="onDelete(content.id)"
+                      style="font-size: 13px"
                       >Remove</span
+                    >
+                    <span
+                      v-if="content.user !== logged_id"
+                      @click="onReply({ ...content, index: index })"
+                      style="font-size: 13px"
+                      >Reply</span
                     >
                   </div>
                 </div>
@@ -269,7 +414,7 @@
         <h2 class="ml-3">Gallery</h2>
       </div>
       <div class="images">
-        <h4 class="font-weight-bold">Images</h4>
+        <h4 class="font-weight-bold">Recent files</h4>
         <b-row class="p-2" v-if="isLoadingGallery">
           <b-col cols="6" class="p-2">
             <div>
@@ -315,69 +460,37 @@
             cols="6"
             class="p-2"
           >
-            <div><img :src="`${src}`" @click="openImage(src)" alt="" /></div>
-          </b-col>
-        </b-row>
-        <h4 class="font-weight-bold">Files</h4>
-        <b-row class="p-2" v-if="isLoadingGallery">
-          <b-col cols="6" class="p-2">
-            <div>
-              <b-skeleton-img
-                no-aspect
-                height="8rem"
-                width="8rem"
-              ></b-skeleton-img>
+            <div class="d-flex bg-warning p-1" v-if="!isFile(src).status">
+              <b-icon
+                class="w-50 mr-1 text-dark align-self-center"
+                scale="5rem"
+                icon="file-earmark-zip"
+              ></b-icon>
+              <a
+                :href="src"
+                style="color: #35495e;
+                          width: 40%;
+                          word-wrap: break-word;
+                          "
+                >{{ isFile(src).name }}</a
+              >
+            </div>
+            <div v-else>
+              <img :src="`${src}`" @click="openImage(src)" alt="" />
             </div>
           </b-col>
-          <b-col cols="6" class="p-2">
-            <div>
-              <b-skeleton-img
-                no-aspect
-                height="8rem"
-                width="8rem"
-              ></b-skeleton-img>
-            </div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div>
-              <b-skeleton-img
-                no-aspect
-                height="8rem"
-                width="8rem"
-              ></b-skeleton-img>
-            </div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div>
-              <b-skeleton-img
-                no-aspect
-                height="8rem"
-                width="8rem"
-              ></b-skeleton-img>
-            </div>
-          </b-col>
-        </b-row>
-        <b-row class="p-2">
-          <!-- <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col>
-          <b-col cols="6" class="p-2">
-            <div><img src="/nayeon.jpg" alt="" /></div>
-          </b-col> -->
         </b-row>
       </div>
     </div>
-    <b-modal :id="`modal-image`" centered hide-footer hide-header no-fade>
-      <b-img :src="src" fluid></b-img>
+    <b-modal
+      :id="`modal-image`"
+      centered
+      hide-footer
+      hide-header
+      no-fade
+      size="xl"
+    >
+      <b-img :src="src" style="width: 100%; height: auto"></b-img>
     </b-modal>
   </section>
 </template>
@@ -416,7 +529,8 @@ export default {
       isLoadingGallery: false,
       isLoadingConversation: false,
       scrolled: false,
-      chats: []
+      chats: [],
+      options: {}
     };
   },
   filters: {},
@@ -425,6 +539,14 @@ export default {
     this.getData();
   },
   methods: {
+    isFile(value) {
+      const regex = /\.(gif|jpe?g|jfif?|tiff?|png|webp|bmp)$/i;
+      let name = firebase.storage().refFromURL(value).name;
+      return {
+        status: regex.test(name),
+        name: name
+      };
+    },
     onClickOutside() {
       $nuxt.$emit("closeModal");
     },
@@ -447,7 +569,11 @@ export default {
           if (Array.isArray(item.message)) {
             return;
           }
-          return item.message.match(regex);
+          if (item.message.text) {
+            return item.message.text.match(regex);
+          } else {
+            return item.message.match(regex);
+          }
         });
         if (index == -1) {
           this.$swal.fire(`No message match`);
@@ -473,12 +599,12 @@ export default {
             const data = snapshot.val();
             for (let index in data) {
               let item = data[index];
-              if (Array.isArray(item.message)) {
+              if (item.status && Array.isArray(item.message)) {
                 listImages.push(...item.message);
               }
             }
             this.isLoadingGallery = false;
-            this.images = listImages;
+            this.images = listImages.reverse();
           } else {
             this.isLoadingGallery = false;
             this.images = [];
@@ -496,6 +622,7 @@ export default {
           this.chats = [];
           if (snapshot.exists()) {
             this.chats = snapshot.val();
+            this.options = this.chats.options;
           } else {
             this.chats = [];
           }
@@ -548,6 +675,9 @@ export default {
           name: this.$auth.user.name
         });
     },
+    onReply(message) {
+      $nuxt.$emit("onReply", message);
+    },
     async changeTitle({ id }) {
       this.$swal
         .fire({
@@ -597,6 +727,15 @@ export default {
     openImage(src) {
       this.src = src;
       this.$bvModal.show(`modal-image`);
+    },
+    settings() {
+      firebase
+        .database()
+        .ref("chat-sections/" + this.sectionData.id + "/options")
+        .update(this.options);
+      setTimeout(() => {
+        this.$bvModal.hide("settings");
+      }, 250);
     }
   },
   computed: {
@@ -610,12 +749,12 @@ export default {
       return {
         created_at: "created_at",
         status: "status",
-        created_by: "user",
+        created_by: "name",
         content: {
           field: "message",
           callback: value => {
             if (Array.isArray(value)) {
-              return "Images: " + value.join(", ");
+              return "Files: " + value.join(", ");
             }
             if (value.url) {
               return value.text;
@@ -731,21 +870,28 @@ section {
             font-size: 1em;
             border-radius: 1rem;
           }
+          .content-reply {
+            z-index: 10;
+            background: #e5bcea;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+          }
           .actions {
             position: absolute;
             transform: translate(-50%, -50%);
             top: 40%;
+
             .action {
               position: absolute;
               top: 57%;
               transform: translate(-50%, -50%);
               display: none !important;
-              padding: 0.2em;
+              padding: 0.3em;
+              border-radius: 5px;
+              background-color: #ddd;
+
               span:hover {
-                display: inline-block;
-                padding: 3px;
-                border-radius: 3px;
-                background-color: #ddd;
+                color: #41b883;
               }
             }
             &:hover {

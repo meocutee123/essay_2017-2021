@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex paticipants flex-column">
-    <span class="floating-btn" @click="addParicipant()">ADD</span>
+    <span v-if="host === logged_id || allow_add" class="floating-btn" @click="addParicipant()">ADD</span>
     <b-modal size="sm" hide-footer hide-header id="modal-add">
       <div style="position: relative" class="d-flex align-items-center px-2">
         <b-icon icon="search" class="icon-search"></b-icon>
@@ -112,7 +112,8 @@ export default {
       selected: [],
       temp: [],
       host: null,
-      matches: []
+      matches: [],
+      max_members: 0, allow_add: false
     };
   },
   async mounted() {
@@ -123,6 +124,8 @@ export default {
       .on("value", snapshot => {
         if (snapshot.exists()) {
           const data = snapshot.val();
+          this.max_members = data.options.members;
+          this.allow_add = data.options.allow_add;
           this.host = data.host;
           this.listUsers = data.users;
         }
@@ -217,6 +220,14 @@ export default {
     },
     onSave() {
       const params = this.participants.map(user => user.email);
+      if ([...this.selected, ...params].length > this.max_members) {
+        this.$bvToast.toast("Maximum members was set to " + this.max_members, {
+          title: `Maximum members exceeded`,
+          variant: 'warning',
+          solid: true
+        });
+        return;
+      }
       firebase
         .database()
         .ref(`chat-sections/${this.sectionID}`)

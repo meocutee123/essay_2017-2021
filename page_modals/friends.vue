@@ -174,29 +174,63 @@ export default {
         .push().key;
 
       db.ref("users/" + this.user.request_id + "/friends/" + key).update(
-        { ...person, status: 0, from: this.logged_id, created_date: new Date() },
+        {
+          ...person,
+          status: 0,
+          from: this.logged_id,
+          created_date: new Date()
+        },
         error => {
           console.log(error);
         }
       );
       db.ref("users/" + person.request_id + "/friends/" + key).update(
-        { ...this.user, status: 0, from: this.logged_id, isNew: true, created_date: new Date() },
+        {
+          ...this.user,
+          status: 0,
+          from: this.logged_id,
+          isNew: true,
+          created_date: new Date()
+        },
         error => {
           console.log(error);
         }
       );
     },
-    removeFriend(person) {
-      firebase
-        .database()
-        .ref(
-          "users/" + this.user.request_id + "/friends/" + person.data_request
-        )
-        .remove();
-      firebase
-        .database()
-        .ref("users/" + person.request_id + "/friends/" + person.data_request)
-        .remove();
+    async removeFriend(person) {
+      const qoutes = [
+        "If true friendship always stays, who are the friends that leave?",
+        "Good friends are hard to find, harder to leave, & imposible to forget.",
+        "Some people are going to leave but that's not the end of our story.",
+        "Friends come and go like waves of the ocean but the true one sticks like an octopus on your face.",
+        "I hate it when my friends change just because they meet new people.",
+        "You should've ended me when you had the chance. Look up in the sky it's a bird it's a plane",
+        "I don't know what your problem is, or why you hate me or stopped talking to me. But I honestly dont Care! Your loss not mine.",
+        "A milions memories flashed by through my mind but I just smile and said I used to.",
+      ];
+      const index = Math.floor(Math.random() * 7);
+      const action = await this.$swal.fire({
+        title: qoutes[index],
+        imageUrl: person.picture,
+        imageWidth: 100,
+        imageHeight: 100,
+        showCancelButton: true,
+        confirmButtonText: "Yes, remove anyway!",
+        confirmButtonColor: "#41b883",
+        cancelButtonText: "No, cancel!"
+      });
+      if (action.isConfirmed) {
+        firebase
+          .database()
+          .ref(
+            "users/" + this.user.request_id + "/friends/" + person.data_request
+          )
+          .remove();
+        firebase
+          .database()
+          .ref("users/" + person.request_id + "/friends/" + person.data_request)
+          .remove();
+      }
     }
   }
 };
