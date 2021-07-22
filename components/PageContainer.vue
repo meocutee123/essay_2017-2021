@@ -28,6 +28,7 @@ export default {
     height: 100%;
     box-sizing: border-box;
     border: 1px solid #e4e6eb;
+
   }
   .chat-area {
     width: 100%;

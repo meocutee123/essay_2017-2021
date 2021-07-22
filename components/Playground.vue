@@ -162,7 +162,7 @@ export default {
           .then(
             ({ data }) => (params.message = { ...data, text: params.message })
           )
-          .catch(err);
+          .catch(err=>console.log(err));
       }
       if (this.images.length) {
         let listImages = [];
@@ -372,7 +372,6 @@ export default {
         margin-bottom: 130px;
         background: #ebebeb;
         border-radius: 7px;
-        padding: 5px;
         div {
           width: 200px;
           border-radius: 5px;

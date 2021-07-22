@@ -1,6 +1,11 @@
 <template>
   <div class="d-flex paticipants flex-column">
-    <span v-if="host === logged_id || allow_add" class="floating-btn" @click="addParicipant()">ADD</span>
+    <span
+      v-if="host === logged_id || allow_add"
+      class="floating-btn"
+      @click="addParicipant()"
+      >ADD</span
+    >
     <b-modal size="sm" hide-footer hide-header id="modal-add">
       <div style="position: relative" class="d-flex align-items-center px-2">
         <b-icon icon="search" class="icon-search"></b-icon>
@@ -93,7 +98,7 @@
           </template>
         </div>
       </div>
-      <button class="leave" @click="selfLeave()">Leave conversation</button>
+      <button v-if="isInConversation" class="leave" @click="selfLeave()">Leave conversation</button>
     </div>
   </div>
 </template>
@@ -113,7 +118,8 @@ export default {
       temp: [],
       host: null,
       matches: [],
-      max_members: 0, allow_add: false
+      max_members: 0,
+      allow_add: false
     };
   },
   async mounted() {
@@ -223,7 +229,7 @@ export default {
       if ([...this.selected, ...params].length > this.max_members) {
         this.$bvToast.toast("Maximum members was set to " + this.max_members, {
           title: `Maximum members exceeded`,
-          variant: 'warning',
+          variant: "warning",
           solid: true
         });
         return;
@@ -245,6 +251,17 @@ export default {
         item => this.logged_id === item.email
       );
       this.removePaticipant(index, "Leave this conversation?");
+    }
+  },
+  computed:{
+    isInConversation(){
+      const index = this.participants.findIndex(
+        item => this.logged_id === item.email
+      );
+      if(index === -1){
+        return false
+      }
+      return true
     }
   }
 };

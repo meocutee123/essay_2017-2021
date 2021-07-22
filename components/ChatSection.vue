@@ -32,7 +32,7 @@
         </div> -->
       </div>
       <div class="detail d-flex justify-content-between align-items-center">
-        <p>
+        <p style="white-space: nowrap;">
           <span v-b-modal.paticipants>{{
             getParticipants + " participants"
           }}</span>
@@ -192,7 +192,11 @@
             <small v-if="content.user !== logged_id">
               <b-icon v-if="content.reply" icon="reply-fill"></b-icon>
               {{ content.name }}
-              <span v-if="content.reply">{{ content.reply.user ===logged_id ? 'replied to you' : `replied to ${content.reply.name}` }}</span></small
+              <span v-if="content.reply">{{
+                content.reply.user === logged_id
+                  ? "replied to you"
+                  : `replied to ${content.reply.name}`
+              }}</span></small
             >
             <div class="content d-flex flex-column">
               <template v-if="!content.status">
@@ -322,8 +326,7 @@
                         class="m-1"
                         alt=""
                         style="border-radius: 5px;
-                             width: 160px;
-                             height: 100px;
+                             width: 200px;
                               object-fit: cover; cursor: pointer"
                       />
                     </b-col>
@@ -352,11 +355,12 @@
                       ></a>
                       <small>{{ content.message.url }}</small>
                     </div>
-                    <div v-else>{{content.message}}</div>
+                    <div v-else>{{ content.message }}</div>
                   </template>
                 </div>
 
                 <div
+                  v-if="isInChats"
                   class="actions"
                   :style="
                     content.user === logged_id
@@ -401,7 +405,10 @@
         </template>
         <div class="bottom"></div>
       </div>
-      <Playground :sectionID="sectionData.id" />
+      <Playground v-if="isInChats" :sectionID="sectionData.id" />
+      <div v-else class="hasRemoved d-flex align-items-center justify-content-center">
+        You have been removed!
+      </div>
     </div>
     <div :class="[{ active: isActive }, 'gallery px-2']" id="gallery">
       <div class="gallery-head d-flex align-items-center">
@@ -530,7 +537,8 @@ export default {
       isLoadingConversation: false,
       scrolled: false,
       chats: [],
-      options: {}
+      options: {},
+      isInChats: true
     };
   },
   filters: {},
@@ -623,6 +631,8 @@ export default {
           if (snapshot.exists()) {
             this.chats = snapshot.val();
             this.options = this.chats.options;
+            this.isInChats =
+              this.chats.users.find(email => email === this.logged_id) || false;
           } else {
             this.chats = [];
           }
@@ -862,7 +872,7 @@ section {
             display: inline-block;
             // layout
             position: relative;
-            max-width: 400px;
+            max-width: 450px;
             margin-bottom: 0.7rem !important;
             // looks
             overflow-wrap: break-word;
@@ -983,5 +993,14 @@ section {
 }
 .link-preview:hover {
   cursor: pointer;
+}
+.hasRemoved {
+  height: 3.5rem;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 2rem;
+  background: rgb(255, 203, 203)
 }
 </style>
