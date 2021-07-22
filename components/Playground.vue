@@ -106,12 +106,20 @@ export default {
       this.reply = payload;
       document.querySelector("textarea").focus();
     });
+    window.addEventListener('paste', this.getImage)
   },
   mounted() {
     this.logged_id = this.$auth.user.email;
     this.getListUsers();
   },
   methods: {
+    getImage(e){
+      const pasted = e.clipboardData.files[0];
+      console.log(pasted);
+      if(!pasted) return
+      this.images.push(URL.createObjectURL(pasted));
+      this.tasks.push(this.uploadFile(pasted))
+    },
     onDeleteImage(index) {
       this.images.splice(index, 1);
       this.tasks.splice(index, 1);
@@ -124,10 +132,10 @@ export default {
       this.tasks.push(this.uploadFile(e));
     },
     uploadFile(e) {
-      const file = e.target.files[0];
+      const file = e.target ? e.target.files[0] : e;
       const storageRef = firebase.storage().ref();
-      const fileRef = storageRef.child(file.name);
-      return new Promise((resolve, reject) => {
+      const fileRef = storageRef.child(`${Date.now()}-${file.name}`);
+      return new Promise((resolve) => {
         resolve(
           fileRef.put(file).then(snapshot =>
             snapshot.ref.getDownloadURL().then(dowloadURL => {
@@ -144,6 +152,7 @@ export default {
         ? { ...this.message(), reply: this.reply }
         : this.message();
       this.content = "";
+      this.sendHandler(params)
       const el = document.getElementById("arrow-clockwise");
       if (el) {
         el.style.display = "block";
@@ -177,9 +186,7 @@ export default {
             ((this.disableSend = false), (this.isReply = false))
           )
         );
-        return;
       }
-      this.sendHandler(params);
     },
     async sendHandler(params) {
       if (params.message === "" || params.message === "\n") return;
@@ -285,6 +292,8 @@ export default {
       handler() {
         this.getListUsers();
         this.content = "";
+        this.tasks = []
+        this.images = []
       }
     }
   }

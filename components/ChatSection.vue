@@ -256,8 +256,8 @@
                           class="m-1"
                           alt=""
                           style="border-radius: 5px;
-                             width: 160px;
-                             height: 100px;
+                             width: 200px;
+                             max-height: 600px;
                               object-fit: cover; cursor: pointer"
                         />
                       </b-col>
@@ -327,6 +327,7 @@
                         alt=""
                         style="border-radius: 5px;
                              width: 200px;
+                             max-height: 600px;
                               object-fit: cover; cursor: pointer"
                       />
                     </b-col>
@@ -550,6 +551,7 @@ export default {
     isFile(value) {
       const regex = /\.(gif|jpe?g|jfif?|tiff?|png|webp|bmp)$/i;
       let name = firebase.storage().refFromURL(value).name;
+      console.log(name);
       return {
         status: regex.test(name),
         name: name
@@ -666,13 +668,13 @@ export default {
             setTimeout(() => {
               this.isLoadingConversation = false;
               this.scrollToElement();
-            }, 300);
+            }, 500);
           } else {
             this.messages = [];
             setTimeout(() => {
               this.isLoadingConversation = false;
               this.scrollToElement();
-            }, 300);
+            }, 500);
           }
         });
     },
